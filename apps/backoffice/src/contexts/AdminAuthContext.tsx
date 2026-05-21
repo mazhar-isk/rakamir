@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminUser, apiPost, ApiResponse, clearAuthToken, LoginRequest, LoginResponse, setAuthToken } from '@ecommerce/api-client';
+import { AdminUser, apiPost, clearAuthToken, LoginRequest, LoginResponse, setAuthToken } from '@ecommerce/api-client';
 import { MOCK_ROLES } from '@ecommerce/api-client/src/mock/data';
 import { hasPermission, Permission } from '@ecommerce/utils';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
@@ -31,16 +31,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (data: LoginRequest) => {
     // Mock is handled transparently by the Axios interceptor (NEXT_PUBLIC_MOCK_API=true)
-    const response = await apiPost<ApiResponse<LoginResponse>>('/v1/admin/login', data);
+    const response = await apiPost<LoginResponse>('/v1/admin/login', data);
 
-    if (!response.data) {
-      throw new Error(response.message || 'Login gagal.');
+    if (!response) {
+      throw new Error('Login gagal.');
     }
 
-    setAuthToken(response.data.access_token);
-    localStorage.setItem('access_token', response.data.access_token);
-    localStorage.setItem('bo_admin', JSON.stringify({ ...response.data.user, role: MOCK_ROLES[0] }));
-    setAdmin({ ...response.data.user, role: MOCK_ROLES[0] } as unknown as AdminUser);
+    setAuthToken(response.access_token);
+    localStorage.setItem('access_token', response.access_token);
+    localStorage.setItem('bo_admin', JSON.stringify({ ...response.user, role: MOCK_ROLES[0] }));
+    setAdmin({ ...response.user, role: MOCK_ROLES[0] } as unknown as AdminUser);
   };
 
   const logout = () => {

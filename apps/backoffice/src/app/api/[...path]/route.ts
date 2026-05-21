@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveMock } from '@ecommerce/api-client/src/mock/handlers';
 
 const getBackendUrl = () => {
   return process.env.API_BACKEND_URL || 'https://1f0d-2402-8780-106f-4c80-8078-aa9c-6729-7ad2.ngrok-free.app';
+};
+
+const isMockEnabled = () => {
+  return process.env.NEXT_PUBLIC_MOCK_API === 'true';
 };
 
 async function handleProxy(request: NextRequest) {
@@ -10,6 +15,31 @@ async function handleProxy(request: NextRequest) {
     const path = url.pathname.replace(/^\/api/, '');
     const searchParams = url.searchParams.toString();
     const backendUrl = `${getBackendUrl()}${path}${searchParams ? `?${searchParams}` : ''}`;
+
+    // Intercept with mock API if enabled
+    if (isMockEnabled()) {
+      let body: any = undefined;
+      if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+        try {
+          const text = await request.clone().text();
+          body = text ? JSON.parse(text) : undefined;
+        } catch (e) {
+          // Ignore parsing error
+        }
+      }
+      const mockUrl = `${path}${searchParams ? `?${searchParams}` : ''}`;
+      const mock = resolveMock(request.method, mockUrl, body);
+      if (mock) {
+        return NextResponse.json(mock, {
+          status: parseInt(mock.code, 10) || 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': '*',
+          },
+        });
+      }
+    }
 
     // Build clean forwarded headers
     const headers = new Headers();

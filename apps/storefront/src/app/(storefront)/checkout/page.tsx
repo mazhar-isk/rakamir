@@ -192,8 +192,8 @@ export default function CheckoutPage() {
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Button variant="outlined" size="large" startIcon={<ArrowBack />} onClick={() => setActiveStep(1)} sx={{ flex: 1 }}>Kembali</Button>
-                  <Button variant="contained" size="large" startIcon={<CheckCircle />} onClick={handlePlaceOrder} loading={isSubmitting} sx={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
-                    Konfirmasi Pesanan
+                  <Button variant="contained" size="large" startIcon={!isSubmitting && <CheckCircle />} onClick={handlePlaceOrder} disabled={isSubmitting} sx={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+                    {isSubmitting ? 'Memproses...' : 'Konfirmasi Pesanan'}
                   </Button>
                 </Box>
               </Card>

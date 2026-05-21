@@ -10,9 +10,9 @@ const isMockEnabled = () =>
 const createApiClient = (): AxiosInstance => {
   const instance = axios.create({
     baseURL: getBaseURL(),
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true' 
+      'ngrok-skip-browser-warning': 'true'
     },
     timeout: 30000,
   });
@@ -28,8 +28,8 @@ const createApiClient = (): AxiosInstance => {
           await new Promise((r) => setTimeout(r, 100 + Math.random() * 200));
           // Throw a "resolved" response by using axios's adapter trick
           const response = {
-            data: mock.data,
-            status: mock.status,
+            data: mock,
+            status: parseInt(mock.code, 10) || 200,
             statusText: 'OK',
             headers: {},
             config,
@@ -53,6 +53,23 @@ const createApiClient = (): AxiosInstance => {
         }
       }
       return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // ── Response envelope unwrapper ──────────────────────────────────────────
+  instance.interceptors.response.use(
+    (response) => {
+      if (
+        response.data &&
+        typeof response.data === 'object' &&
+        'code' in response.data &&
+        'message' in response.data &&
+        'data' in response.data
+      ) {
+        response.data = response.data.data;
+      }
+      return response;
     },
     (error) => Promise.reject(error)
   );

@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // transpilePackages: ['@ecommerce/ui', '@ecommerce/api-client', '@ecommerce/utils'],
+  transpilePackages: ['@ecommerce/ui', '@ecommerce/api-client', '@ecommerce/utils'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
@@ -9,6 +9,7 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_MOCK_API: process.env.NEXT_PUBLIC_MOCK_API,
   },
 };
 

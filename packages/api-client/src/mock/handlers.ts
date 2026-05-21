@@ -32,7 +32,7 @@ function match(url: string, pattern: RegExp): RegExpMatchArray | null {
   return url.replace(/\?.*$/, '').match(pattern);
 }
 
-type MockResponse = { status: number; data: unknown };
+type MockResponse = { code: string; message: string; data: unknown };
 
 /** Main dispatcher — returns a mock response for a given method + url, or null if unhandled */
 export function resolveMock(method: string, rawUrl: string, body?: any): MockResponse | null {
@@ -43,7 +43,8 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
   // ── AUTH ───────────────────────────────────────────────────────────────────
   if (m === 'POST' && (path.endsWith('/auth/login') || path.endsWith('/v1/admin/login'))) {
     return {
-      status: 200,
+      code: '200',
+      message: "success",
       data: {
         access_token: 'mock-access-token',
         refresh_token: 'mock-refresh-token',
@@ -57,14 +58,14 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
   }
 
   if (m === 'POST' && path.endsWith('/auth/register')) {
-    return { status: 201, data: { message: 'Registered successfully' } };
+    return { code: '201', message: 'success', data: { message: 'Registered successfully' } };
   }
 
   // ── PRODUCTS ───────────────────────────────────────────────────────────────
   if (m === 'GET' && match(path, /\/products\/([^/]+)$/)) {
     const slug = path.split('/').pop()!;
     const product = MOCK_PRODUCTS.find((p) => p.slug === slug || p.id === slug);
-    return product ? { status: 200, data: product } : { status: 404, data: { message: 'Not found' } };
+    return product ? { code: '200', message: 'success', data: product } : { code: '404', message: 'not_found', data: { message: 'Not found' } };
   }
 
   if (m === 'GET' && path.match(/\/(admin\/)?products$/)) {
@@ -76,19 +77,19 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     if (params.get('sort') === 'price_asc') items.sort((a, b) => a.price - b.price);
     if (params.get('sort') === 'price_desc') items.sort((a, b) => b.price - a.price);
     if (q) items = items.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
-    return { status: 200, data: paginate(items, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(items, page, perPage) };
   }
 
   if (m === 'POST' && path.match(/\/admin\/products$/)) {
-    return { status: 201, data: { id: `p-mock-${Date.now()}`, ...{} } };
+    return { code: '201', message: 'success', data: { id: `p-mock-${Date.now()}` } };
   }
 
   if (m === 'PUT' && match(path, /\/admin\/products\/([^/]+)$/)) {
-    return { status: 200, data: { message: 'Updated' } };
+    return { code: '200', message: 'success', data: { message: 'Updated' } };
   }
 
   if (m === 'DELETE' && match(path, /\/admin\/products\/([^/]+)$/)) {
-    return { status: 200, data: { message: 'Deleted' } };
+    return { code: '200', message: 'success', data: { message: 'Deleted' } };
   }
 
   // ── CATEGORIES ─────────────────────────────────────────────────────────────
@@ -101,14 +102,14 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     // if (params.get('sort') === 'price_asc') items.sort((a, b) => a.price - b.price);
     // if (params.get('sort') === 'price_desc') items.sort((a, b) => b.price - a.price);
     if (q) items = items.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
-    return { status: 200, data: paginate(items, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(items, page, perPage) };
   }
 
   // ── ORDERS ─────────────────────────────────────────────────────────────────
   if (m === 'GET' && match(path, /\/(admin\/)?orders\/([^/]+)$/) && !path.endsWith('/status')) {
     const id = path.split('/').pop()!;
     const order = MOCK_ORDERS.find((o) => o.id === id || o.order_number === id);
-    return order ? { status: 200, data: order } : { status: 404, data: { message: 'Not found' } };
+    return order ? { code: '200', message: 'success', data: order } : { code: '404', message: 'not_found', data: { message: 'Not found' } };
   }
 
   if (m === 'GET' && path.match(/\/(admin\/)?orders$/)) {
@@ -117,58 +118,58 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     const status = params.get('status');
     if (status) items = items.filter((o) => o.status === status);
     if (q) items = items.filter((o) => o.order_number.includes(q) || o.shipping_address.recipient_name.toLowerCase().includes(q.toLowerCase()));
-    return { status: 200, data: paginate(items, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(items, page, perPage) };
   }
 
   if (m === 'POST' && path.endsWith('/orders')) {
     const newOrder = { ...MOCK_ORDERS[0], id: `ord-mock-${Date.now()}`, order_number: `ORD-MOCK-${Date.now()}`, status: 'payment_pending', created_at: new Date().toISOString() };
-    return { status: 201, data: newOrder };
+    return { code: '201', message: 'success', data: newOrder };
   }
 
   if (m === 'PATCH' && match(path, /\/orders\/([^/]+)\/status$/)) {
-    return { status: 200, data: { message: 'Status updated' } };
+    return { code: '200', message: 'success', data: { message: 'Status updated' } };
   }
 
   // ── ACCOUNT ────────────────────────────────────────────────────────────────
   if (m === 'GET' && path.endsWith('/account/orders')) {
-    return { status: 200, data: paginate(MOCK_ORDERS, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(MOCK_ORDERS, page, perPage) };
   }
 
   if (m === 'GET' && match(path, /\/account\/orders\/([^/]+)$/)) {
     const id = path.split('/').pop()!;
     const order = MOCK_ORDERS.find((o) => o.id === id) ?? MOCK_ORDERS[0];
-    return { status: 200, data: order };
+    return { code: '200', message: 'success', data: order };
   }
 
   if (m === 'GET' && path.endsWith('/account/profile')) {
-    return { status: 200, data: { id: 'u-1', name: 'Muhammad Azhar Iskandar', email: 'azhar@example.com', phone: '081234567890' } };
+    return { code: '200', message: 'success', data: { id: 'u-1', name: 'Muhammad Azhar Iskandar', email: 'azhar@example.com', phone: '081234567890' } };
   }
 
   if (m === 'PUT' && path.endsWith('/account/profile')) {
-    return { status: 200, data: { message: 'Profile updated' } };
+    return { code: '200', message: 'success', data: { message: 'Profile updated' } };
   }
 
   if (m === 'GET' && path.endsWith('/account/addresses')) {
-    return { status: 200, data: [MOCK_ADDRESS] };
+    return { code: '200', message: 'success', data: [MOCK_ADDRESS] };
   }
 
   // ── SHIPMENTS ──────────────────────────────────────────────────────────────
   if (m === 'GET' && match(path, /\/shipments\/([^/]+)$/)) {
     const trackingNumber = path.split('/').pop()!;
     const tracking = MOCK_TRACKING[trackingNumber] ?? Object.values(MOCK_TRACKING)[0];
-    return { status: 200, data: tracking };
+    return { code: '200', message: 'success', data: tracking };
   }
 
   // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────
   if (m === 'GET' && path.endsWith('/admin/dashboard/stats')) {
-    return { status: 200, data: MOCK_DASHBOARD_STATS };
+    return { code: '200', message: 'success', data: MOCK_DASHBOARD_STATS };
   }
 
   // ── CUSTOMERS ─────────────────────────────────────────────────────────────
   if (m === 'GET' && path.match(/\/admin\/customers$/)) {
     let items = [...MOCK_CUSTOMERS];
     if (q) items = items.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()) || c.email.toLowerCase().includes(q.toLowerCase()));
-    return { status: 200, data: paginate(items, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(items, page, perPage) };
   }
 
   if (m === 'GET' && match(path, /\/admin\/customers\/([^/]+)$/)) {
@@ -176,7 +177,8 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     const customer = MOCK_CUSTOMERS.find((c) => c.id === id) ?? MOCK_CUSTOMERS[0];
     const customerOrders = MOCK_ORDERS.slice(0, 2);
     return {
-      status: 200,
+      code: '200',
+      message: 'success',
       data: {
         ...customer,
         orders: customerOrders,
@@ -188,32 +190,32 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
 
   // ── ROLES ─────────────────────────────────────────────────────────────────
   if (m === 'GET' && path.endsWith('/admin/roles')) {
-    return { status: 200, data: MOCK_ROLES };
+    return { code: '200', message: 'success', data: MOCK_ROLES };
   }
 
   if (m === 'POST' && path.endsWith('/admin/roles')) {
-    return { status: 201, data: { id: `r-mock-${Date.now()}`, message: 'Role created' } };
+    return { code: '201', message: 'success', data: { id: `r-mock-${Date.now()}`, message: 'Role created' } };
   }
 
   if (m === 'DELETE' && match(path, /\/admin\/roles\/([^/]+)$/)) {
-    return { status: 200, data: { message: 'Role deleted' } };
+    return { code: '200', message: 'success', data: { message: 'Role deleted' } };
   }
 
   // ── ADMIN USERS ───────────────────────────────────────────────────────────
   if (m === 'GET' && path.match(/\/admin\/users$/)) {
-    return { status: 200, data: paginate(MOCK_ADMIN_USERS, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(MOCK_ADMIN_USERS, page, perPage) };
   }
 
   if (m === 'POST' && path.endsWith('/admin/users')) {
-    return { status: 201, data: { id: `a-mock-${Date.now()}`, message: 'Admin user created' } };
+    return { code: '201', message: 'success', data: { id: `a-mock-${Date.now()}`, message: 'Admin user created' } };
   }
 
   if (m === 'PATCH' && match(path, /\/admin\/users\/([^/]+)$/)) {
-    return { status: 200, data: { message: 'User updated' } };
+    return { code: '200', message: 'success', data: { message: 'User updated' } };
   }
 
   if (m === 'DELETE' && match(path, /\/admin\/users\/([^/]+)$/)) {
-    return { status: 200, data: { message: 'User deleted' } };
+    return { code: '200', message: 'success', data: { message: 'User deleted' } };
   }
 
   // ── ADMIN SHIPMENTS ───────────────────────────────────────────────────────
@@ -237,15 +239,15 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
       const filtered = shipments.filter((s) =>
         s.tracking_number?.includes(q) || s.order_number.includes(q)
       );
-      return { status: 200, data: paginate(filtered, page, perPage) };
+      return { code: '200', message: 'success', data: paginate(filtered, page, perPage) };
     }
-    return { status: 200, data: paginate(shipments, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(shipments, page, perPage) };
   }
 
   // ── CATEGORIES ────────────────────────────────────────────────────────────
   if (m === 'GET' && path.match(/\/(admin\/)?categories$/)) {
     return {
-      status: 200, data: paginate(
+      code: '200', message: 'success', data: paginate(
         [
           { id: 'cat-1', name: 'Elektronik', slug: 'elektronik' },
           { id: 'cat-2', name: 'Fashion', slug: 'fashion' },
@@ -258,22 +260,22 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
 
   // ── FAVORITES ─────────────────────────────────────────────────────────────
   if (m === 'GET' && path === '/favorites') {
-    return { status: 200, data: MOCK_WISHLIST };
+    return { code: '200', message: 'success', data: MOCK_WISHLIST };
   }
   if (m === 'GET' && path === '/favorites/products') {
     const favoriteProducts = MOCK_PRODUCTS.filter(p => MOCK_WISHLIST.includes(p.id));
-    return { status: 200, data: paginate(favoriteProducts, page, perPage) };
+    return { code: '200', message: 'success', data: paginate(favoriteProducts, page, perPage) };
   }
   if (m === 'POST' && path === '/favorites') {
     const productId = body?.productId;
-    if (!productId) return { status: 400, data: { message: 'Product ID required' } };
+    if (!productId) return { code: '400', message: 'bad_request', data: { message: 'Product ID required' } };
     const index = MOCK_WISHLIST.indexOf(productId);
     if (index > -1) {
       MOCK_WISHLIST.splice(index, 1);
     } else {
       MOCK_WISHLIST.push(productId);
     }
-    return { status: 200, data: MOCK_WISHLIST };
+    return { code: '200', message: 'success', data: MOCK_WISHLIST };
   }
 
   return null; // unhandled → fall through to real API
