@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAKAMIR — Coming Soon</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@300;400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+
+      background:
+        radial-gradient(circle at top,
+          #f9f6f2,
+          #ebc4b8 55%,
+          #e3b5a6);
+
+      background-size: 200% 200%;
+      animation:
+        bgMove 14s ease infinite;
+
+      color: white;
+    }
+
+    .container {
+      min-height: 100vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      position: relative;
+      padding: 32px;
+    }
+
+    .content {
+      text-align: center;
+
+      animation:
+        fadeUp 1.5s ease;
+    }
+
+    .logo {
+      width: min(600px, 85vw);
+
+      filter:
+        drop-shadow(0 20px 60px rgba(255, 255, 255, .15));
+
+      animation:
+        floatLogo 6s ease-in-out infinite;
+    }
+
+    .card {
+      margin-top: 40px;
+
+      backdrop-filter: blur(18px);
+
+      background:
+        rgba(255, 255, 255, .12);
+
+      border:
+        1px solid rgba(255, 255, 255, .25);
+
+      padding:
+        28px 42px;
+
+      border-radius:
+        28px;
+
+      display: inline-block;
+    }
+
+    .subtitle {
+      letter-spacing: 4px;
+
+      text-transform: uppercase;
+
+      font-size: 12px;
+
+      opacity: .75;
+
+      margin-bottom: 16px;
+    }
+
+    .title {
+      font-family:
+        'Cormorant Garamond',
+        serif;
+
+      font-size:
+        clamp(42px, 6vw, 72px);
+
+      margin-bottom:
+        10px;
+    }
+
+    .desc {
+      opacity: .85;
+
+      max-width: 520px;
+
+      margin: auto;
+
+      line-height: 1.8;
+    }
+
+    .countdown {
+      margin-top: 28px;
+
+      display: flex;
+
+      justify-content: center;
+
+      gap: 20px;
+    }
+
+    .item {
+      min-width: 90px;
+    }
+
+    .number {
+      font-size: 38px;
+
+      font-weight: 600;
+    }
+
+    .label {
+      font-size: 12px;
+
+      letter-spacing: 2px;
+
+      opacity: .7;
+    }
+
+    .glow {
+      position: absolute;
+
+      width: 500px;
+      height: 500px;
+
+      background:
+        rgba(255, 255, 255, .15);
+
+      border-radius: 50%;
+
+      filter: blur(120px);
+
+      animation:
+        pulse 8s infinite;
+    }
+
+    .glow.left {
+      left: -150px;
+      top: -150px;
+    }
+
+    .glow.right {
+      right: -150px;
+      bottom: -150px;
+    }
+
+    @keyframes floatLogo {
+
+      0%,
+      100% {
+        transform:
+          translateY(0);
+      }
+
+      50% {
+        transform:
+          translateY(-16px);
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+
+        transform:
+          translateY(40px);
+      }
+
+      to {
+        opacity: 1;
+
+        transform:
+          translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      50% {
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes bgMove {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    @media(max-width:768px) {
+
+      .countdown {
+        gap: 12px;
+      }
+
+      .item {
+        min-width: 70px;
+      }
+
+      .number {
+        font-size: 28px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="glow left"></div>
+  <div class="glow right"></div>
+
+  <section class="container">
+
+    <div class="content">
+
+      <!-- Replace with your asset -->
+      <img src="./rakamir-logo.png" class="logo" alt="RAKAMIR" />
+
+      <div class="card">
+        <div class="countdown" style="min-height: 1.5rem;">
+        </div>
+
+        <div class="subtitle">
+          Something Beautiful is Coming
+        </div>
+
+        <h1 class="title">
+          Coming Soon
+        </h1>
+
+        <p class="desc">
+          We are preparing a refined experience designed with
+          modern elegance and meaningful details.
+        </p>
+
+        <div class="countdown" style="min-height: 1.5rem;">
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</body>
+
+</html>
