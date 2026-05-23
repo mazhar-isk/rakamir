@@ -72,10 +72,26 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     const params = new URLSearchParams(qs);
     let items = [...MOCK_PRODUCTS];
     if (params.get('is_featured') === 'true') items = items.filter((p) => p.is_featured);
-    if (params.get('is_new') === 'true') items = items.filter((p) => p.is_new);
-    if (params.get('sort') === 'sold_count') items.sort((a, b) => b.sold_count - a.sold_count);
-    if (params.get('sort') === 'price_asc') items.sort((a, b) => a.price - b.price);
-    if (params.get('sort') === 'price_desc') items.sort((a, b) => b.price - a.price);
+    const filter = params.get('filter');
+    if (filter === 'new' || params.get('is_new') === 'true') items = items.filter((p) => p.is_new);
+    if (filter === 'promo') items = items.filter((p) => p.discount_percentage !== undefined && p.discount_percentage > 0);
+    
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      items = items.filter((p) => 
+        p.category?.slug === categoryParam || 
+        p.category?.id === categoryParam ||
+        p.categories?.some((c) => c.slug === categoryParam || c.id === categoryParam)
+      );
+    }
+
+    const sort = params.get('sort');
+    if (sort === 'sold_count') items.sort((a, b) => b.sold_count - a.sold_count);
+    if (sort === 'price_asc') items.sort((a, b) => a.price - b.price);
+    if (sort === 'price_desc') items.sort((a, b) => b.price - a.price);
+    if (sort === 'rating') items.sort((a, b) => b.rating - a.rating);
+    if (sort === 'newest') items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
     if (q) items = items.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
     return { code: '200', message: 'success', data: paginate(items, page, perPage) };
   }
@@ -244,19 +260,6 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     return { code: '200', message: 'success', data: paginate(shipments, page, perPage) };
   }
 
-  // ── CATEGORIES ────────────────────────────────────────────────────────────
-  if (m === 'GET' && path.match(/\/(admin\/)?categories$/)) {
-    return {
-      code: '200', message: 'success', data: paginate(
-        [
-          { id: 'cat-1', name: 'Elektronik', slug: 'elektronik' },
-          { id: 'cat-2', name: 'Fashion', slug: 'fashion' },
-          { id: 'cat-3', name: 'Rumah', slug: 'rumah' },
-          { id: 'cat-4', name: 'Olahraga', slug: 'olahraga' },
-          { id: 'cat-5', name: 'Kecantikan', slug: 'kecantikan' },
-        ], page, perPage)
-    };
-  }
 
   // ── FAVORITES ─────────────────────────────────────────────────────────────
   if (m === 'GET' && path === '/favorites') {

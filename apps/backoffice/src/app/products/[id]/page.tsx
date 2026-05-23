@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useConfirm } from '@/contexts/ConfirmContext';
 
@@ -35,6 +35,71 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const { data: product, isLoading } = useGet<Product>(`/admin/products/${params.id}`);
   const [selectedImage, setSelectedImage] = useState(0);
   const { confirm } = useConfirm();
+
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+
+  // Initialize selected options when product loads
+  useEffect(() => {
+    if (product?.options && product.options.length > 0) {
+      const initial: Record<string, string> = {};
+      product.options.forEach((opt) => {
+        if (opt.values && opt.values.length > 0) {
+          initial[opt.id] = opt.values[0].id;
+        }
+      });
+      setSelectedOptions(initial);
+    }
+  }, [product]);
+
+  // Resolve active SKU from selected options
+  const getActiveSku = () => {
+    if (!product || !product.skus || !product.options || product.options.length === 0) return null;
+    return product.skus.find((sku) => {
+      if (!sku.option_values_map) return false;
+      return Object.entries(selectedOptions).every(([optId, valId]) => {
+        return sku.option_values_map[optId] === valId;
+      });
+    }) || null;
+  };
+
+  const activeSku = getActiveSku();
+  const currentPrice = activeSku ? activeSku.price : (product?.price ?? 0);
+  const currentOriginalPrice = activeSku ? activeSku.original_price : product?.original_price;
+  const currentStock = activeSku ? activeSku.stock : (product?.stock ?? 0);
+
+  // Check if an option value is disabled in the current selection context
+  const isOptionValueDisabled = (optionId: string, valueId: string) => {
+    if (!product || !product.skus) return false;
+    const testSelection = { ...selectedOptions, [optionId]: valueId };
+    return !product.skus.some((sku) => {
+      if (!sku.option_values_map) return false;
+      return Object.entries(testSelection).every(([oId, vId]) => {
+        return sku.option_values_map[oId] === vId;
+      });
+    });
+  };
+
+  const handleOptionChange = (optionId: string, valueId: string) => {
+    setSelectedOptions((prev) => {
+      const next = { ...prev, [optionId]: valueId };
+      if (product?.skus) {
+        // Check if the new combination matches a SKU
+        const sku = product.skus.find((s) => 
+          Object.entries(next).every(([oId, vId]) => s.option_values_map?.[oId] === vId)
+        );
+        if (sku) {
+          return next;
+        }
+
+        // Auto-correct to the first valid SKU that supports this option value
+        const fallbackSku = product.skus.find((s) => s.option_values_map?.[optionId] === valueId);
+        if (fallbackSku && fallbackSku.option_values_map) {
+          return { ...fallbackSku.option_values_map };
+        }
+      }
+      return next;
+    });
+  };
 
   const handleDelete = async () => {
     const ok = await confirm({
@@ -85,8 +150,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   }
 
   const images = product.images?.length ? product.images : ['https://picsum.photos/seed/placeholder/400/400'];
-  const discountPct = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+  const discountPct = currentOriginalPrice
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : null;
 
   return (
@@ -190,15 +255,15 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             {/* Price */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="h4" fontWeight={800} color="primary.main">
-                {formatCurrency(product.price)}
+                {formatCurrency(currentPrice)}
               </Typography>
-              {product.original_price && (
+              {currentOriginalPrice && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                   <Typography
                     variant="body2"
                     sx={{ textDecoration: 'line-through', color: 'text.disabled' }}
                   >
-                    {formatCurrency(product.original_price)}
+                    {formatCurrency(currentOriginalPrice)}
                   </Typography>
                   <Chip
                     label={`-${discountPct}%`}
@@ -210,11 +275,96 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               )}
             </Box>
 
+            {/* Dynamic Option Selectors */}
+            {product.options && product.options.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5, textTransform: 'uppercase', letterSpacing: 1, fontSize: 10, color: 'text.secondary' }}>
+                  Pilihan Varian
+                </Typography>
+                {product.options.map((opt) => (
+                  <Box key={opt.id} sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.8rem' }}>
+                      {opt.name}: <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>{opt.values?.find(v => v.id === selectedOptions[opt.id])?.value}</Box>
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {opt.values?.map((val) => {
+                        const isSelected = selectedOptions[opt.id] === val.id;
+                        const isDisabled = isOptionValueDisabled(opt.id, val.id);
+                        const isColor = opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'warna';
+                        
+                        if (isColor) {
+                          const colorHexMap: Record<string, string> = {
+                            black: '#1f2937',
+                            blue: '#3b82f6',
+                            red: '#ef4444',
+                            green: '#10b981',
+                            white: '#ffffff',
+                            gray: '#9ca3af',
+                            silver: '#e5e7eb',
+                            gold: '#f59e0b',
+                            orange: '#f97316',
+                          };
+                          const hex = colorHexMap[val.value.toLowerCase()] || '#cccccc';
+                          
+                          return (
+                            <Box
+                              key={val.id}
+                              onClick={() => handleOptionChange(opt.id, val.id)}
+                              sx={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                bgcolor: hex,
+                                border: isSelected ? '3px solid #6C63FF' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid #E5E7EB'),
+                                boxShadow: isSelected ? '0 0 6px rgba(108,99,255,0.4)' : 'none',
+                                cursor: 'pointer',
+                                opacity: isDisabled ? 0.25 : 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.1s',
+                                '&:hover': { transform: 'scale(1.1)' }
+                              }}
+                            >
+                              {val.value.toLowerCase() === 'white' && isSelected && (
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#000000' }} />
+                              )}
+                              {val.value.toLowerCase() !== 'white' && isSelected && (
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ffffff' }} />
+                              )}
+                            </Box>
+                          );
+                        }
+                        
+                        return (
+                          <Chip
+                            key={val.id}
+                            label={val.value}
+                            size="small"
+                            onClick={() => handleOptionChange(opt.id, val.id)}
+                            color={isSelected ? 'primary' : 'default'}
+                            variant={isSelected ? 'filled' : 'outlined'}
+                            sx={{
+                              cursor: 'pointer',
+                              fontWeight: isSelected ? 600 : 400,
+                              opacity: isDisabled ? 0.35 : 1,
+                              borderStyle: isDisabled ? 'dashed' : 'solid',
+                            }}
+                          />
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
             <Divider sx={{ my: 2 }} />
 
             {/* Stock */}
             {[
-              { label: 'Stok Tersisa', value: product.stock, chipColor: product.stock < 10 ? 'error' : product.stock < 30 ? 'warning' : 'success' },
+              { label: 'Stok Tersisa', value: currentStock, chipColor: currentStock < 10 ? 'error' : currentStock < 30 ? 'warning' : 'success' },
             ].map(({ label, value, chipColor }) => (
               <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                 <Typography variant="body2" color="text.secondary">{label}</Typography>

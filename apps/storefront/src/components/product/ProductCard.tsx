@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { Product } from '@ecommerce/api-client';
@@ -9,6 +10,7 @@ import { Box, Card, CardContent, Chip, IconButton, Rating, Typography } from '@m
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -20,6 +22,8 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem } = useCart();
   const { favoriteIds, toggleFavorite } = useWishlist();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const isFavorite = favoriteIds.includes(product.id);
   const discountPct = product.discount_percentage;
   const mainImage = product.images?.[0] || '/placeholder-product.jpg';
@@ -27,6 +31,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.info('Silakan login terlebih dahulu untuk menyimpan ke favorit.');
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     toggleFavorite(product.id, product.name);
   };
 

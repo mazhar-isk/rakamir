@@ -13,20 +13,56 @@ export const MOCK_CATEGORIES: Category[] = [
 // ─── Products ─────────────────────────────────────────────────────────────────
 export const MOCK_PRODUCTS: Product[] = [
   {
-    id: 'p-1', slug: 'iphone-15-pro', name: 'iPhone 15 Pro 256GB',
+    id: 'p-1', slug: 'iphone-15-pro', name: 'iPhone 15 Pro',
     description: 'Smartphone flagship Apple dengan chip A17 Pro, kamera 48MP, layar ProMotion 120Hz, dan titanium frame yang ringan namun kuat. Performa terbaik di kelasnya dengan daya tahan baterai sepanjang hari.',
     price: 19999000, original_price: 22999000, discount_percentage: 13,
     stock: 45, images: ['https://picsum.photos/seed/iphone15/400/400', 'https://picsum.photos/seed/iphone15b/400/400'],
-    category: MOCK_CATEGORIES[0], tags: ['smartphone', 'apple', 'flagship'],
+    category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['smartphone', 'apple', 'flagship'],
     rating: 4.9, review_count: 1240, is_featured: true, is_new: true, sold_count: 342,
     created_at: '2024-09-20T00:00:00.000Z',
+    options: [
+      {
+        id: 'opt-size',
+        name: 'Size',
+        values: [
+          { id: 'val-128gb', value: '128GB' },
+          { id: 'val-256gb', value: '256GB' },
+          { id: 'val-512gb', value: '512GB' },
+          { id: 'val-1tb', value: '1TB' }
+        ]
+      },
+      {
+        id: 'opt-color',
+        name: 'Color',
+        values: [
+          { id: 'val-red', value: 'Red' },
+          { id: 'val-black', value: 'Black' },
+          { id: 'val-blue', value: 'Blue' },
+          { id: 'val-silver', value: 'Silver' },
+          { id: 'val-orange', value: 'Orange' }
+        ]
+      }
+    ],
+    skus: [
+      // 256GB SKUs
+      { id: 'sku-iphone-256-red', sku: 'IPH15P-256-RED', price: 19999000, stock: 10, option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-red' } },
+      { id: 'sku-iphone-256-blk', sku: 'IPH15P-256-BLK', price: 19999000, stock: 15, option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-black' } },
+      { id: 'sku-iphone-256-blu', sku: 'IPH15P-256-BLU', price: 20199000, stock: 5, option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-blue' } },
+      // 512GB SKUs
+      { id: 'sku-iphone-512-red', sku: 'IPH15P-512-RED', price: 22999000, stock: 8, option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-red' } },
+      { id: 'sku-iphone-512-blk', sku: 'IPH15P-512-BLK', price: 22999000, stock: 12, option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-black' } },
+      { id: 'sku-iphone-512-blu', sku: 'IPH15P-512-BLU', price: 23199000, stock: 6, option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-blue' } },
+      // 1TB SKUs
+      { id: 'sku-iphone-1tb-slv', sku: 'IPH15P-1TB-SLV', price: 26999000, original_price: 28999000, stock: 4, option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-silver' } },
+      { id: 'sku-iphone-1tb-org', sku: 'IPH15P-1TB-ORG', price: 27499000, original_price: 29499000, stock: 3, option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-orange' } }
+    ]
   },
   {
     id: 'p-2', slug: 'samsung-galaxy-s24-ultra', name: 'Samsung Galaxy S24 Ultra',
     description: 'Ponsel Android terkuat dengan S Pen built-in, kamera 200MP, layar 6.8" QHD+ Dynamic AMOLED, dan AI features terdepan.',
     price: 18500000, original_price: 20000000, discount_percentage: 8,
     stock: 32, images: ['https://picsum.photos/seed/s24/400/400'],
-    category: MOCK_CATEGORIES[0], tags: ['smartphone', 'samsung', 'android'],
+    category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['smartphone', 'samsung', 'android'],
     rating: 4.8, review_count: 892, is_featured: true, is_new: true, sold_count: 289,
     created_at: '2024-01-17T00:00:00.000Z',
   },
@@ -35,7 +71,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Laptop ultra-tipis dengan chip M3, layar Liquid Retina 13.6", 8GB RAM, 256GB SSD. Performa luar biasa dengan baterai hingga 18 jam.',
     price: 16999000, original_price: undefined, discount_percentage: undefined,
     stock: 18, images: ['https://picsum.photos/seed/macbook/400/400'],
-    category: MOCK_CATEGORIES[0], tags: ['laptop', 'apple', 'macbook'],
+    category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['laptop', 'apple', 'macbook'],
     rating: 4.9, review_count: 567, is_featured: true, is_new: false, sold_count: 124,
     created_at: '2024-03-08T00:00:00.000Z',
   },
@@ -44,7 +80,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Sepatu lari dengan bantalan Air Max terbesar, desain modern, tersedia dalam berbagai pilihan warna cerah.',
     price: 1899000, original_price: 2199000, discount_percentage: 14,
     stock: 120, images: ['https://picsum.photos/seed/nike270/400/400'],
-    category: MOCK_CATEGORIES[3], tags: ['sepatu', 'nike', 'olahraga'],
+    category: MOCK_CATEGORIES[3], categories: [MOCK_CATEGORIES[3]], tags: ['sepatu', 'nike', 'olahraga'],
     rating: 4.7, review_count: 3210, is_featured: true, is_new: false, sold_count: 890,
     created_at: '2023-06-15T00:00:00.000Z',
   },
@@ -53,7 +89,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Vacuum cleaner nirkabel dengan laser dust detection, HEPA filtration, dan daya hisap 230AW. Bersihkan lantai dengan lebih efisien.',
     price: 8999000, original_price: 10500000, discount_percentage: 14,
     stock: 24, images: ['https://picsum.photos/seed/dyson/400/400'],
-    category: MOCK_CATEGORIES[2], tags: ['vacuum', 'dyson', 'rumah'],
+    category: MOCK_CATEGORIES[2], categories: [MOCK_CATEGORIES[2]], tags: ['vacuum', 'dyson', 'rumah'],
     rating: 4.8, review_count: 428, is_featured: false, is_new: true, sold_count: 76,
     created_at: '2024-04-10T00:00:00.000Z',
   },
@@ -62,7 +98,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Smart TV 55 inci dengan panel QLED, resolusi 4K, HDR10+, dan smart features lengkap. Warna lebih hidup dengan Quantum Dot.',
     price: 9999000, original_price: 12999000, discount_percentage: 23,
     stock: 15, images: ['https://picsum.photos/seed/samsungtv/400/400'],
-    category: MOCK_CATEGORIES[2], tags: ['tv', 'samsung', 'smart-tv'],
+    category: MOCK_CATEGORIES[2], categories: [MOCK_CATEGORIES[2]], tags: ['tv', 'samsung', 'smart-tv'],
     rating: 4.6, review_count: 312, is_featured: false, is_new: false, sold_count: 98,
     created_at: '2023-11-01T00:00:00.000Z',
   },
@@ -71,7 +107,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Sepatu running dengan teknologi Boost cushioning terbaik Adidas. Memberikan energi balik di setiap langkah untuk performa maksimal.',
     price: 2299000, original_price: 2799000, discount_percentage: 18,
     stock: 65, images: ['https://picsum.photos/seed/adidas/400/400'],
-    category: MOCK_CATEGORIES[3], tags: ['sepatu', 'adidas', 'running'],
+    category: MOCK_CATEGORIES[3], categories: [MOCK_CATEGORIES[3]], tags: ['sepatu', 'adidas', 'running'],
     rating: 4.6, review_count: 1870, is_featured: false, is_new: true, sold_count: 445,
     created_at: '2024-02-14T00:00:00.000Z',
   },
@@ -80,7 +116,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Serum vitamin C konsentrasi tinggi untuk mencerahkan kulit, meratakan warna, dan mempercepat regenerasi sel kulit wajah.',
     price: 349000, original_price: 429000, discount_percentage: 19,
     stock: 200, images: ['https://picsum.photos/seed/loreal/400/400'],
-    category: MOCK_CATEGORIES[4], tags: ['skincare', 'serum', 'vitamin-c'],
+    category: MOCK_CATEGORIES[4], categories: [MOCK_CATEGORIES[4]], tags: ['skincare', 'serum', 'vitamin-c'],
     rating: 4.5, review_count: 5620, is_featured: false, is_new: true, sold_count: 2100,
     created_at: '2024-05-01T00:00:00.000Z',
   },
@@ -89,7 +125,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Headphone over-ear dengan Active Noise Cancellation terbaik di industri, baterai 30 jam, dan kualitas suara Hi-Res Audio.',
     price: 5499000, original_price: 6500000, discount_percentage: 15,
     stock: 38, images: ['https://picsum.photos/seed/sony/400/400'],
-    category: MOCK_CATEGORIES[0], tags: ['headphone', 'sony', 'audio'],
+    category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['headphone', 'sony', 'audio'],
     rating: 4.9, review_count: 2100, is_featured: true, is_new: false, sold_count: 318,
     created_at: '2023-09-05T00:00:00.000Z',
   },
@@ -98,7 +134,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Tablet terkuat Apple dengan chip M4, layar Ultra Retina XDR OLED, Apple Pencil Pro support, dan bobot hanya 444 gram.',
     price: 17499000, original_price: undefined, discount_percentage: undefined,
     stock: 22, images: ['https://picsum.photos/seed/ipadpro/400/400'],
-    category: MOCK_CATEGORIES[0], tags: ['tablet', 'apple', 'ipad'],
+    category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['tablet', 'apple', 'ipad'],
     rating: 4.8, review_count: 340, is_featured: true, is_new: true, sold_count: 89,
     created_at: '2024-05-15T00:00:00.000Z',
   },
@@ -107,7 +143,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Headphone wireless Bose dengan ANC terdepan, desain foldable, baterai 24 jam, dan kenyamanan sepanjang hari.',
     price: 4299000, original_price: 5000000, discount_percentage: 14,
     stock: 50, images: ['https://picsum.photos/seed/bose/400/400'],
-    category: MOCK_CATEGORIES[0], tags: ['headphone', 'bose', 'anc'],
+    category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['headphone', 'bose', 'anc'],
     rating: 4.7, review_count: 980, is_featured: false, is_new: false, sold_count: 210,
     created_at: '2023-07-20T00:00:00.000Z',
   },
@@ -116,10 +152,46 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Pressure cooker multifungsi 7-in-1: pressure cooker, slow cooker, rice cooker, steamer, sauté, yogurt maker, dan food warmer.',
     price: 1299000, original_price: 1599000, discount_percentage: 19,
     stock: 80, images: ['https://picsum.photos/seed/instantpot/400/400'],
-    category: MOCK_CATEGORIES[2], tags: ['dapur', 'cooker', 'rumah'],
+    category: MOCK_CATEGORIES[2], categories: [MOCK_CATEGORIES[2]], tags: ['dapur', 'cooker', 'rumah'],
     rating: 4.6, review_count: 1540, is_featured: false, is_new: false, sold_count: 320,
     created_at: '2023-05-10T00:00:00.000Z',
   },
+  {
+    id: 'p-13', slug: 'sweater-running-aeroglow', name: 'Sweater Running AeroGlow',
+    description: 'Sweater lari premium dengan teknologi sirkulasi udara AeroGlow. Nyaman digunakan untuk aktivitas olahraga outdoor maupun gaya hidup kasual sehari-hari. Dibuat dari bahan knit stretchable ultra-ringan.',
+    price: 349000, original_price: 399000, discount_percentage: 12,
+    stock: 50, images: ['https://picsum.photos/seed/sweater1/400/400', 'https://picsum.photos/seed/sweater2/400/400'],
+    category: MOCK_CATEGORIES[1], categories: [MOCK_CATEGORIES[1], MOCK_CATEGORIES[3]], tags: ['sweater', 'running', 'fashion', 'sport'],
+    rating: 4.8, review_count: 86, is_featured: true, is_new: true, sold_count: 24,
+    created_at: '2024-05-01T00:00:00.000Z',
+    options: [
+      {
+        id: 'opt-color',
+        name: 'Color',
+        values: [
+          { id: 'val-black', value: 'Black' },
+          { id: 'val-blue', value: 'Blue' }
+        ]
+      },
+      {
+        id: 'opt-size',
+        name: 'Size',
+        values: [
+          { id: 'val-s', value: 'S' },
+          { id: 'val-m', value: 'M' },
+          { id: 'val-l', value: 'L' }
+        ]
+      }
+    ],
+    skus: [
+      { id: 'sku-blk-s', sku: 'SWTR-BLK-S', price: 349000, stock: 10, option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-s' } },
+      { id: 'sku-blk-m', sku: 'SWTR-BLK-M', price: 349000, stock: 15, option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-m' } },
+      { id: 'sku-blk-l', sku: 'SWTR-BLK-L', price: 369000, stock: 5, option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-l' } },
+      { id: 'sku-blu-s', sku: 'SWTR-BLU-S', price: 359000, stock: 8, option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-s' } },
+      { id: 'sku-blu-m', sku: 'SWTR-BLU-M', price: 359000, stock: 7, option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-m' } },
+      { id: 'sku-blu-l', sku: 'SWTR-BLU-L', price: 379000, stock: 5, option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-l' } }
+    ]
+  }
 ];
 
 // ─── Addresses ────────────────────────────────────────────────────────────────

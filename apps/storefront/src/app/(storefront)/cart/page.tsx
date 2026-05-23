@@ -43,7 +43,9 @@ export default function CartPage() {
                   <Box sx={{ flex: 1 }}>
                     <Typography fontWeight={600} mb={0.5}>{item.product.name}</Typography>
                     {item.variant && <Typography variant="caption" color="text.secondary">Varian: {item.variant.value}</Typography>}
-                    <Typography color="primary.main" fontWeight={700} mt={1}>{formatCurrency(item.product.price)}</Typography>
+                    <Typography color="primary.main" fontWeight={700} mt={1}>
+                      {formatCurrency(item.product.price + (item.variant?.price_modifier ?? 0))}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                     <IconButton size="small" color="error" onClick={() => removeItem(item.id)}><Delete fontSize="small" /></IconButton>

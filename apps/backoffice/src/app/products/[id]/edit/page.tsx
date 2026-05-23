@@ -1,24 +1,36 @@
 'use client';
 
-import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { apiPut, Product, useGet } from '@ecommerce/api-client';
-import { ArrowBack, CloudUpload, Delete } from '@mui/icons-material';
+import React, { useRef, useEffect } from 'react';
 import {
-  Avatar, Box, Button, Card, FormControlLabel, Grid,
-  IconButton, Switch, TextField, Typography,
+  Box, Typography, Card, Grid, TextField, Button,
+  FormControlLabel, Switch, Divider, IconButton, Avatar,
+  Chip, Table, TableHead, TableRow, TableCell, TableBody, Paper
 } from '@mui/material';
+import { ArrowBack, CloudUpload, Delete, Add as AddIcon } from '@mui/icons-material';
 import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { apiPut, Product, useGet } from '@ecommerce/api-client';
 import { toast } from 'react-toastify';
-import * as Yup from 'yup';
+import BackofficeLayout from '@/components/layout/BackofficeLayout';
+
+const MOCK_CATEGORIES_LIST = [
+  { id: 'cat-1', name: 'Elektronik' },
+  { id: 'cat-2', name: 'Fashion' },
+  { id: 'cat-3', name: 'Rumah' },
+  { id: 'cat-4', name: 'Olahraga' },
+  { id: 'cat-5', name: 'Kecantikan' },
+  { id: 'cat-6', name: 'Makanan' }
+];
 
 const schema = Yup.object({
   name: Yup.string().required('Nama produk wajib diisi'),
   description: Yup.string().required('Deskripsi wajib diisi'),
   price: Yup.number().required('Harga wajib diisi').min(0),
+  original_price: Yup.number().optional().min(0),
   stock: Yup.number().required('Stok wajib diisi').min(0),
+  category_ids: Yup.array().min(1, 'Pilih minimal satu kategori').required('Kategori wajib dipilih'),
 });
 
 export default function EditProductPage({ params }: { params: { id: string } }) {
@@ -28,18 +40,38 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
 
   const formik = useFormik({
     initialValues: {
-      name: '', description: '', price: '', original_price: '',
-      stock: '', tags: '', is_featured: false, is_new: false,
+      name: '',
+      description: '',
+      price: '',
+      original_price: '',
+      stock: '',
+      category_ids: [] as string[],
+      tags: '',
+      is_featured: false,
+      is_new: false,
       images: [] as string[],
+      options: [] as Array<{ id: string; name: string; values: Array<{ id: string; value: string }>; rawInput?: string }>,
+      skus: [] as Array<{
+        id: string;
+        sku: string;
+        price: number;
+        original_price?: number;
+        stock: number;
+        option_values_map: Record<string, string>;
+      }>,
     },
     validationSchema: schema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
         await apiPut(`/admin/products/${params.id}`, {
           ...values,
+          category_id: values.category_ids[0] || 'cat-1',
           tags: typeof values.tags === 'string'
             ? values.tags.split(',').map((t) => t.trim()).filter(Boolean)
             : values.tags,
+          price: parseFloat(values.price),
+          original_price: values.original_price ? parseFloat(values.original_price) : undefined,
+          stock: parseFloat(values.stock),
         });
         toast.success('Produk berhasil diperbarui!');
         router.push('/products');
@@ -60,10 +92,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         price: String(product.price),
         original_price: String(product.original_price ?? ''),
         stock: String(product.stock),
+        category_ids: product.categories?.map((c) => c.id) ?? [product.category?.id].filter(Boolean) as string[],
         tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
         is_featured: product.is_featured,
         is_new: product.is_new,
         images: product.images ?? [],
+        options: product.options?.map((o) => ({
+          ...o,
+          rawInput: o.values?.map((v) => v.value).join(', ') ?? '',
+        })) ?? [],
+        skus: product.skus ?? [],
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,14 +111,96 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     const files = Array.from(e.target.files ?? []);
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) =>
+      reader.onload = (ev) => {
         formik.setFieldValue('images', [...formik.values.images, ev.target?.result as string]);
+      };
       reader.readAsDataURL(file);
     });
   };
 
-  const removeImage = (idx: number) =>
+  const removeImage = (idx: number) => {
     formik.setFieldValue('images', formik.values.images.filter((_, i) => i !== idx));
+  };
+
+  const regenerateSkus = (options: typeof formik.values.options) => {
+    if (options.length === 0 || options.every(o => !o.values || o.values.length === 0)) {
+      formik.setFieldValue('skus', []);
+      return;
+    }
+
+    const validOptions = options.filter(o => o.values && o.values.length > 0);
+    if (validOptions.length === 0) {
+      formik.setFieldValue('skus', []);
+      return;
+    }
+
+    const combinations = validOptions.reduce<Array<Array<{ optId: string; valId: string; valVal: string }>>>(
+      (acc, opt) => {
+        const next: typeof acc = [];
+        acc.forEach((comb) => {
+          opt.values?.forEach((val) => {
+            next.push([...comb, { optId: opt.id, valId: val.id, valVal: val.value }]);
+          });
+        });
+        return next;
+      },
+      [[]]
+    );
+
+    const basePrice = parseFloat(formik.values.price) || 0;
+
+    const nextSkus = combinations.map((comb, index) => {
+      const map: Record<string, string> = {};
+      comb.forEach(item => {
+        map[item.optId] = item.valId;
+      });
+
+      const existing = formik.values.skus.find((sku) => {
+        if (!sku.option_values_map) return false;
+        return Object.entries(map).every(([oId, vId]) => sku.option_values_map[oId] === vId);
+      });
+
+      if (existing) return existing;
+
+      const combCode = comb.map(c => c.valVal.substring(0, 3).toUpperCase()).join('-');
+      const prodNameSlug = formik.values.name
+        ? formik.values.name.substring(0, 5).toUpperCase().replace(/\s+/g, '')
+        : 'PROD';
+      const skuCode = `${prodNameSlug}-${combCode}-${index + 1}`;
+
+      return {
+        id: `sku-${Date.now()}-${index}`,
+        sku: skuCode,
+        price: basePrice,
+        stock: 10,
+        option_values_map: map,
+      };
+    });
+
+    formik.setFieldValue('skus', nextSkus);
+
+    // Sum stock of all generated SKUs and update overall stock field
+    const totalStock = nextSkus.reduce((sum, item) => sum + item.stock, 0);
+    formik.setFieldValue('stock', String(totalStock));
+  };
+
+  const addOption = () => {
+    const optId = `opt-${Date.now()}`;
+    const newOptions = [
+      ...formik.values.options,
+      { id: optId, name: '', values: [] as Array<{ id: string; value: string }>, rawInput: '' }
+    ];
+    formik.setFieldValue('options', newOptions);
+  };
+
+  const getOptionValueLabel = (map: Record<string, string>) => {
+    if (!map) return '';
+    return Object.entries(map).map(([optId, valId]) => {
+      const opt = formik.values.options.find(o => o.id === optId);
+      const val = opt?.values?.find(v => v.id === valId);
+      return `${opt?.name || 'Varian'}: ${val?.value || ''}`;
+    }).join(', ');
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +222,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
 
       <form onSubmit={formik.handleSubmit}>
         <Grid container spacing={3}>
-          {/* Left */}
+          {/* Left - main info */}
           <Grid item xs={12} lg={8}>
             <Card sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Informasi Produk</Typography>
@@ -117,8 +237,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   helperText={formik.touched.description && formik.errors.description} />
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
-                    <TextField fullWidth label="Harga Jual (Rp)" name="price" type="number"
-                      value={formik.values.price} onChange={formik.handleChange} onBlur={formik.handleBlur}
+                    <TextField fullWidth label="Harga Jual Base (Rp)" name="price" type="number"
+                      value={formik.values.price} onChange={(e) => {
+                        formik.handleChange(e);
+                        const basePrice = parseFloat(e.target.value) || 0;
+                        const updatedSkus = formik.values.skus.map(s => ({
+                          ...s,
+                          price: basePrice
+                        }));
+                        formik.setFieldValue('skus', updatedSkus);
+                      }} onBlur={formik.handleBlur}
                       error={formik.touched.price && Boolean(formik.errors.price)}
                       helperText={formik.touched.price && formik.errors.price} />
                   </Grid>
@@ -127,16 +255,177 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                       value={formik.values.original_price} onChange={formik.handleChange} />
                   </Grid>
                   <Grid item xs={6}>
-                    <TextField fullWidth label="Stok" name="stock" type="number"
+                    <TextField fullWidth label="Total Stok" name="stock" type="number"
+                      disabled={formik.values.skus.length > 0}
                       value={formik.values.stock} onChange={formik.handleChange} onBlur={formik.handleBlur}
                       error={formik.touched.stock && Boolean(formik.errors.stock)}
-                      helperText={formik.touched.stock && formik.errors.stock} />
+                      helperText={formik.touched.stock ? formik.errors.stock : (formik.values.skus.length > 0 ? 'Dihitung otomatis dari stok varian' : '')} />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+                      <Typography variant="caption" color="text.secondary" mb={0.5} fontWeight={600}>Kategori (Multi-Category)</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {MOCK_CATEGORIES_LIST.map((cat) => {
+                          const isSelected = formik.values.category_ids.includes(cat.id);
+                          return (
+                            <Chip
+                              key={cat.id}
+                              label={cat.name}
+                              size="small"
+                              onClick={() => {
+                                const next = isSelected
+                                  ? formik.values.category_ids.filter(id => id !== cat.id)
+                                  : [...formik.values.category_ids, cat.id];
+                                formik.setFieldValue('category_ids', next);
+                              }}
+                              color={isSelected ? 'primary' : 'default'}
+                              variant={isSelected ? 'filled' : 'outlined'}
+                              sx={{ cursor: 'pointer', fontWeight: isSelected ? 600 : 400 }}
+                            />
+                          );
+                        })}
+                      </Box>
+                      {formik.touched.category_ids && formik.errors.category_ids && (
+                        <Typography variant="caption" color="error" mt={0.5}>{formik.errors.category_ids as string}</Typography>
+                      )}
+                    </Box>
                   </Grid>
                 </Grid>
                 <TextField fullWidth label="Tags (pisahkan dengan koma)" name="tags"
                   value={formik.values.tags} onChange={formik.handleChange}
                   placeholder="elektronik, gadget, smartphone" />
               </Box>
+            </Card>
+
+            {/* Premium Variant/SKU Manager */}
+            <Card sx={{ p: 3, mb: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box>
+                  <Typography variant="h6" fontWeight={700}>Konfigurasi Varian (Multi-Variant)</Typography>
+                  <Typography variant="body2" color="text.secondary">Tentukan opsi varian seperti Warna dan Ukuran</Typography>
+                </Box>
+                <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={addOption}>
+                  Tambah Opsi
+                </Button>
+              </Box>
+
+              {formik.values.options.length === 0 && (
+                <Box sx={{ py: 3, textAlign: 'center', border: '1px dashed #E5E7EB', borderRadius: 2, bgcolor: '#F8F9FC' }}>
+                  <Typography variant="body2" color="text.secondary">Belum ada varian yang didefinisikan. Produk akan dijual sebagai varian tunggal.</Typography>
+                </Box>
+              )}
+
+              {formik.values.options.map((opt, optIdx) => (
+                <Box key={opt.id} sx={{ p: 2, border: '1px solid #E5E7EB', borderRadius: 2, mb: 2, bgcolor: '#F9FAFB' }}>
+                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                    <TextField
+                      label="Nama Opsi (e.g. Ukuran, Warna)"
+                      value={opt.name}
+                      onChange={(e) => {
+                        const updated = [...formik.values.options];
+                        updated[optIdx].name = e.target.value;
+                        formik.setFieldValue('options', updated);
+                      }}
+                      size="small"
+                      sx={{ width: '40%' }}
+                    />
+                    <Box sx={{ flexGrow: 1 }} />
+                    <IconButton color="error" onClick={() => {
+                      const updated = formik.values.options.filter((_, idx) => idx !== optIdx);
+                      formik.setFieldValue('options', updated);
+                      regenerateSkus(updated);
+                    }}>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    label="Nilai Varian (pisahkan dengan koma, e.g. Merah, Biru, Hijau)"
+                    value={opt.rawInput ?? ''}
+                    onChange={(e) => {
+                      const rawVal = e.target.value;
+                      const valStrings = rawVal.split(',').map(s => s.trim()).filter(Boolean);
+                      const updatedValues = valStrings.map((v, valIdx) => ({
+                        id: `val-${opt.id}-${valIdx}`,
+                        value: v
+                      }));
+                      const updatedOptions = [...formik.values.options];
+                      updatedOptions[optIdx].rawInput = rawVal;
+                      updatedOptions[optIdx].values = updatedValues;
+                      formik.setFieldValue('options', updatedOptions);
+                      regenerateSkus(updatedOptions);
+                    }}
+                    size="small"
+                    placeholder="e.g. S, M, L"
+                    helperText="Ketik nilai dan pisahkan dengan tanda koma ( , )"
+                  />
+                </Box>
+              ))}
+
+              {formik.values.skus.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={2}>Tabel SKU Varian</Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead sx={{ bgcolor: '#F3F4F6' }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Varian</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Kode SKU</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Harga Jual (Rp)</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Stok</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {formik.values.skus.map((sku, index) => (
+                          <TableRow key={sku.id}>
+                            <TableCell sx={{ fontWeight: 600, maxWidth: 200 }}>
+                              {getOptionValueLabel(sku.option_values_map)}
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                size="small"
+                                name={`skus[${index}].sku`}
+                                value={sku.sku}
+                                onChange={formik.handleChange}
+                                variant="standard"
+                                fullWidth
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                size="small"
+                                name={`skus[${index}].price`}
+                                type="number"
+                                value={sku.price}
+                                onChange={formik.handleChange}
+                                variant="standard"
+                                sx={{ width: 100 }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                size="small"
+                                name={`skus[${index}].stock`}
+                                type="number"
+                                value={sku.stock}
+                                onChange={(e) => {
+                                  formik.handleChange(e);
+                                  const nextSkus = [...formik.values.skus];
+                                  nextSkus[index].stock = parseInt(e.target.value, 10) || 0;
+                                  const total = nextSkus.reduce((sum, item) => sum + item.stock, 0);
+                                  formik.setFieldValue('stock', String(total));
+                                }}
+                                variant="standard"
+                                sx={{ width: 80 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
             </Card>
 
             {/* Images */}
@@ -146,7 +435,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 onClick={() => fileInputRef.current?.click()}
                 sx={{ border: '2px dashed #D1D5DB', borderRadius: 3, p: 4, textAlign: 'center', cursor: 'pointer', '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(108,99,255,0.04)' } }}>
                 <CloudUpload sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-                <Typography variant="body2" color="text.secondary">Klik untuk tambah foto baru</Typography>
+                <Typography variant="body2" color="text.secondary">Klik atau seret foto ke sini</Typography>
+                <Typography variant="caption" color="text.disabled">PNG, JPG, WEBP hingga 5MB</Typography>
                 <input ref={fileInputRef} type="file" multiple accept="image/*" hidden onChange={handleImageUpload} />
               </Box>
               {formik.values.images.length > 0 && (
@@ -165,7 +455,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
             </Card>
           </Grid>
 
-          {/* Right */}
+          {/* Right - settings */}
           <Grid item xs={12} lg={4}>
             <Card sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Pengaturan</Typography>
@@ -178,10 +468,17 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
               sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5 }}>
               {formik.isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
-            <Button component={Link} href="/products" variant="outlined" fullWidth size="large" sx={{ mt: 1.5 }}>Batal</Button>
+            <Button component={Link} href="/products" variant="outlined" fullWidth size="large" sx={{ mt: 1.5 }}>
+              Batal
+            </Button>
           </Grid>
         </Grid>
       </form>
     </BackofficeLayout>
   );
+}
+
+function TableContainer({ children, component, variant }: any) {
+  const Component = component || Paper;
+  return <Component variant={variant}>{children}</Component>;
 }

@@ -41,6 +41,27 @@ export interface Address {
 }
 
 // ---- Product ----
+export interface ProductOptionValue {
+  id: string;
+  value: string;
+}
+
+export interface ProductOption {
+  id: string;
+  name: string; // e.g., "Color", "Size"
+  values: ProductOptionValue[];
+}
+
+export interface ProductSku {
+  id: string;
+  sku: string; // SKU code, e.g. "SWTR-BLU-S"
+  price: number;
+  original_price?: number;
+  stock: number;
+  images?: string[];
+  option_values_map: Record<string, string>; // Maps option ID to value ID (e.g. { "opt-color": "val-blue", "opt-size": "val-s" })
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -51,7 +72,8 @@ export interface Product {
   discount_percentage?: number;
   stock: number;
   images: string[];
-  category: Category;
+  category: Category; // Kept for backward compatibility
+  categories: Category[]; // Array of categories for multi-category support
   tags: string[];
   rating: number;
   review_count: number;
@@ -59,6 +81,8 @@ export interface Product {
   is_new: boolean;
   sold_count: number;
   created_at: string;
+  options?: ProductOption[];
+  skus?: ProductSku[];
 }
 
 export interface Category {

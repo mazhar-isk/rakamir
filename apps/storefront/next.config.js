@@ -9,6 +9,7 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_MOCK_API: process.env.NEXT_PUBLIC_MOCK_API,
   },
   async rewrites() {
     return [
