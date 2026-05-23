@@ -38,7 +38,7 @@ export default function CartPage() {
               <Card key={item.id} sx={{ mb: 2, p: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Box sx={{ position: 'relative', width: 100, height: 100, flexShrink: 0, borderRadius: 2, overflow: 'hidden', bgcolor: '#F8F9FC' }}>
-                    <Image src={item.product.images?.[0] || '/placeholder-product.jpg'} alt={item.product.name} fill style={{ objectFit: 'cover' }} />
+                    <Image src={item.variant?.picture || item.product.images?.[0] || '/placeholder-product.jpg'} alt={item.product.name} fill style={{ objectFit: 'cover' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography fontWeight={600} mb={0.5}>{item.product.name}</Typography>

@@ -56,6 +56,7 @@ export default function NewProductPage() {
         price: number;
         original_price?: number;
         stock: number;
+        picture?: string;
         option_values_map: Record<string, string>;
       }>,
     },
@@ -146,6 +147,7 @@ export default function NewProductPage() {
         sku: skuCode,
         price: basePrice,
         stock: 10,
+        picture: undefined,
         option_values_map: map,
       };
     });
@@ -335,6 +337,7 @@ export default function NewProductPage() {
                       <TableHead sx={{ bgcolor: '#F3F4F6' }}>
                         <TableRow>
                           <TableCell sx={{ fontWeight: 700 }}>Varian</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Foto</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Kode SKU</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Harga Jual (Rp)</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Stok</TableCell>
@@ -345,6 +348,52 @@ export default function NewProductPage() {
                           <TableRow key={sku.id}>
                             <TableCell sx={{ fontWeight: 600, maxWidth: 200 }}>
                               {getOptionValueLabel(sku.option_values_map)}
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ position: 'relative', width: 40, height: 40, borderRadius: 1, overflow: 'hidden', border: '1px solid #E5E7EB', cursor: 'pointer', '&:hover .upload-overlay': { opacity: 1 } }} onClick={() => document.getElementById(`sku-file-input-${index}`)?.click()}>
+                                  <Avatar 
+                                    src={sku.picture} 
+                                    variant="rounded" 
+                                    sx={{ width: '100%', height: '100%' }}
+                                  />
+                                  <Box className="upload-overlay" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' }}>
+                                    <CloudUpload sx={{ fontSize: 16 }} />
+                                  </Box>
+                                </Box>
+                                <input
+                                  id={`sku-file-input-${index}`}
+                                  type="file"
+                                  accept="image/*"
+                                  hidden
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (ev) => {
+                                        const nextSkus = [...formik.values.skus];
+                                        nextSkus[index].picture = ev.target?.result as string;
+                                        formik.setFieldValue('skus', nextSkus);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                                {sku.picture && (
+                                  <IconButton 
+                                    size="small" 
+                                    color="error" 
+                                    onClick={() => {
+                                      const nextSkus = [...formik.values.skus];
+                                      nextSkus[index].picture = undefined;
+                                      formik.setFieldValue('skus', nextSkus);
+                                    }}
+                                    sx={{ p: 0.5 }}
+                                  >
+                                    <Delete sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                )}
+                              </Box>
                             </TableCell>
                             <TableCell>
                               <TextField

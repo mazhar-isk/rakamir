@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { useConfirm } from '@/contexts/ConfirmContext';
 
@@ -67,6 +67,27 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const currentOriginalPrice = activeSku ? activeSku.original_price : product?.original_price;
   const currentStock = activeSku ? activeSku.stock : (product?.stock ?? 0);
 
+  const images = useMemo(() => {
+    const productImages = product?.images?.length ? product.images : ['https://picsum.photos/seed/placeholder/400/400'];
+    const skuPictures = product?.skus
+      ?.map((sku) => sku.picture)
+      .filter((pic): pic is string => !!pic) || [];
+    const uniqueSkuPictures = Array.from(new Set(skuPictures)).filter((pic) => !productImages.includes(pic));
+    return [...productImages, ...uniqueSkuPictures];
+  }, [product]);
+
+  // Synchronize selectedImage when active SKU picture changes (from selector clicks)
+  useEffect(() => {
+    if (activeSku?.picture) {
+      const idx = images.indexOf(activeSku.picture);
+      if (idx !== -1) {
+        setSelectedImage(idx);
+      }
+    } else {
+      setSelectedImage(0);
+    }
+  }, [activeSku?.picture, images]);
+
   // Check if an option value is disabled in the current selection context
   const isOptionValueDisabled = (optionId: string, valueId: string) => {
     if (!product || !product.skus) return false;
@@ -99,6 +120,17 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       }
       return next;
     });
+  };
+
+  const handleThumbnailClick = (index: number) => {
+    setSelectedImage(index);
+    const clickedImage = images[index];
+    if (product?.skus) {
+      const matchingSku = product.skus.find((s) => s.picture === clickedImage);
+      if (matchingSku && matchingSku.option_values_map) {
+        setSelectedOptions(matchingSku.option_values_map);
+      }
+    }
   };
 
   const handleDelete = async () => {
@@ -149,7 +181,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     );
   }
 
-  const images = product.images?.length ? product.images : ['https://picsum.photos/seed/placeholder/400/400'];
   const discountPct = currentOriginalPrice
     ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : null;
@@ -199,7 +230,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={images[selectedImage]}
+                src={images[selectedImage] || 'https://picsum.photos/seed/placeholder/400/400'}
                 alt={product.name}
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
@@ -212,7 +243,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                     key={i}
                     src={img}
                     variant="rounded"
-                    onClick={() => setSelectedImage(i)}
+                    onClick={() => handleThumbnailClick(i)}
                     sx={{
                       width: 72, height: 72, cursor: 'pointer',
                       border: i === selectedImage ? '2px solid #6C63FF' : '2px solid transparent',

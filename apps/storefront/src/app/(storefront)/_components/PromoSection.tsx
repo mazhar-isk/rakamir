@@ -12,7 +12,7 @@ export default function PromoSection() {
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
           <Box
             sx={{
-              background: 'linear-gradient(135deg, #6C63FF 0%, #FF6584 100%)',
+              background: 'linear-gradient(135deg, #EBC4B8 20%, #F9F6F2 50%, #EBC4B8 80%)',
               borderRadius: 4,
               p: { xs: 4, md: 8 },
               textAlign: 'center',
@@ -25,11 +25,11 @@ export default function PromoSection() {
               <Box key={i} sx={{ position: 'absolute', ...c, width: c.size, height: c.size, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.1)' }} />
             ))}
 
-            <LocalOffer sx={{ color: 'white', fontSize: 48, mb: 2 }} />
-            <Typography variant="h3" fontWeight={800} color="white" mb={2}>
+            <LocalOffer sx={{ fontSize: 48, mb: 2 }} />
+            <Typography variant="h3" fontWeight={800} mb={2}>
               Diskon Hingga 70%!
             </Typography>
-            <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mb: 4, fontWeight: 400 }}>
+            <Typography variant="h6" sx={{ mb: 4, fontWeight: 400 }}>
               Jangan lewatkan promo spesial kami. Penawaran terbatas untuk produk pilihan terbaik.
             </Typography>
             <Button

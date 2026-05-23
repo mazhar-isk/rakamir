@@ -45,16 +45,16 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     skus: [
       // 256GB SKUs
-      { id: 'sku-iphone-256-red', sku: 'IPH15P-256-RED', price: 19999000, stock: 10, option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-red' } },
-      { id: 'sku-iphone-256-blk', sku: 'IPH15P-256-BLK', price: 19999000, stock: 15, option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-black' } },
-      { id: 'sku-iphone-256-blu', sku: 'IPH15P-256-BLU', price: 20199000, stock: 5, option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-blue' } },
+      { id: 'sku-iphone-256-red', sku: 'IPH15P-256-RED', price: 19999000, stock: 10, picture: 'https://picsum.photos/seed/iphone15red/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-red' } },
+      { id: 'sku-iphone-256-blk', sku: 'IPH15P-256-BLK', price: 19999000, stock: 15, picture: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-black' } },
+      { id: 'sku-iphone-256-blu', sku: 'IPH15P-256-BLU', price: 20199000, stock: 5, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-blue' } },
       // 512GB SKUs
-      { id: 'sku-iphone-512-red', sku: 'IPH15P-512-RED', price: 22999000, stock: 8, option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-red' } },
-      { id: 'sku-iphone-512-blk', sku: 'IPH15P-512-BLK', price: 22999000, stock: 12, option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-black' } },
-      { id: 'sku-iphone-512-blu', sku: 'IPH15P-512-BLU', price: 23199000, stock: 6, option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-blue' } },
+      { id: 'sku-iphone-512-red', sku: 'IPH15P-512-RED', price: 22999000, stock: 8, picture: 'https://picsum.photos/seed/iphone15red/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-red' } },
+      { id: 'sku-iphone-512-blk', sku: 'IPH15P-512-BLK', price: 22999000, stock: 12, picture: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-black' } },
+      { id: 'sku-iphone-512-blu', sku: 'IPH15P-512-BLU', price: 23199000, stock: 6, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-blue' } },
       // 1TB SKUs
-      { id: 'sku-iphone-1tb-slv', sku: 'IPH15P-1TB-SLV', price: 26999000, original_price: 28999000, stock: 4, option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-silver' } },
-      { id: 'sku-iphone-1tb-org', sku: 'IPH15P-1TB-ORG', price: 27499000, original_price: 29499000, stock: 3, option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-orange' } }
+      { id: 'sku-iphone-1tb-slv', sku: 'IPH15P-1TB-SLV', price: 26999000, original_price: 28999000, stock: 4, picture: 'https://picsum.photos/seed/iphone15silver/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-silver' } },
+      { id: 'sku-iphone-1tb-org', sku: 'IPH15P-1TB-ORG', price: 27499000, original_price: 29499000, stock: 3, picture: 'https://picsum.photos/seed/iphone15orange/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-orange' } }
     ]
   },
   {
@@ -184,12 +184,12 @@ export const MOCK_PRODUCTS: Product[] = [
       }
     ],
     skus: [
-      { id: 'sku-blk-s', sku: 'SWTR-BLK-S', price: 349000, stock: 10, option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-s' } },
-      { id: 'sku-blk-m', sku: 'SWTR-BLK-M', price: 349000, stock: 15, option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-m' } },
-      { id: 'sku-blk-l', sku: 'SWTR-BLK-L', price: 369000, stock: 5, option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-l' } },
-      { id: 'sku-blu-s', sku: 'SWTR-BLU-S', price: 359000, stock: 8, option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-s' } },
-      { id: 'sku-blu-m', sku: 'SWTR-BLU-M', price: 359000, stock: 7, option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-m' } },
-      { id: 'sku-blu-l', sku: 'SWTR-BLU-L', price: 379000, stock: 5, option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-l' } }
+      { id: 'sku-blk-s', sku: 'SWTR-BLK-S', price: 349000, stock: 10, picture: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-s' } },
+      { id: 'sku-blk-m', sku: 'SWTR-BLK-M', price: 349000, stock: 15, picture: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-m' } },
+      { id: 'sku-blk-l', sku: 'SWTR-BLK-L', price: 369000, stock: 5, picture: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-l' } },
+      { id: 'sku-blu-s', sku: 'SWTR-BLU-S', price: 359000, stock: 8, picture: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-s' } },
+      { id: 'sku-blu-m', sku: 'SWTR-BLU-M', price: 359000, stock: 7, picture: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-m' } },
+      { id: 'sku-blu-l', sku: 'SWTR-BLU-L', price: 379000, stock: 5, picture: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-l' } }
     ]
   }
 ];

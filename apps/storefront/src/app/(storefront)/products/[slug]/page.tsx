@@ -10,7 +10,7 @@ import { Box, Button, Chip, Container, Divider, Grid, IconButton, Rating, Skelet
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
@@ -66,6 +66,27 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
       setQty(currentStock);
     }
   }, [currentStock, qty]);
+
+  const images = useMemo(() => {
+    const productImages = product?.images?.length ? product.images : ['/placeholder-product.jpg'];
+    const skuPictures = product?.skus
+      ?.map((sku) => sku.picture)
+      .filter((pic): pic is string => !!pic) || [];
+    const uniqueSkuPictures = Array.from(new Set(skuPictures)).filter((pic) => !productImages.includes(pic));
+    return [...productImages, ...uniqueSkuPictures];
+  }, [product]);
+
+  // Synchronize selectedImage when active SKU picture changes (from selector clicks)
+  useEffect(() => {
+    if (activeSku?.picture) {
+      const idx = images.indexOf(activeSku.picture);
+      if (idx !== -1) {
+        setSelectedImage(idx);
+      }
+    } else {
+      setSelectedImage(0);
+    }
+  }, [activeSku?.picture, images]);
 
   // Check if an option value is disabled in the current selection context
   const isOptionValueDisabled = (optionId: string, valueId: string) => {
@@ -150,7 +171,8 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
           name: nameParts.join(', '),
           value: activeSku.sku,
           price_modifier: activeSku.price - product.price,
-          stock: activeSku.stock
+          stock: activeSku.stock,
+          picture: activeSku.picture
         };
       }
 
@@ -163,7 +185,16 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
     }
   };
 
-  const images = product.images?.length ? product.images : ['/placeholder-product.jpg'];
+  const handleThumbnailClick = (index: number) => {
+    setSelectedImage(index);
+    const clickedImage = images[index];
+    if (product.skus) {
+      const matchingSku = product.skus.find((s) => s.picture === clickedImage);
+      if (matchingSku && matchingSku.option_values_map) {
+        setSelectedOptions(matchingSku.option_values_map);
+      }
+    }
+  };
 
   return (
     <StorefrontLayout>
@@ -173,11 +204,11 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
           <Grid item xs={12} md={6}>
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <Box sx={{ position: 'relative', height: 480, borderRadius: 3, overflow: 'hidden', bgcolor: '#F8F9FC', mb: 2 }}>
-                <Image src={images[selectedImage]} alt={product.name} fill style={{ objectFit: 'contain' }} />
+                <Image src={images[selectedImage] || '/placeholder-product.jpg'} alt={product.name} fill style={{ objectFit: 'contain' }} />
               </Box>
               <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto' }}>
                 {images.map((img, i) => (
-                  <Box key={i} onClick={() => setSelectedImage(i)} sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', flexShrink: 0, border: selectedImage === i ? '2px solid #6C63FF' : '2px solid transparent', cursor: 'pointer', bgcolor: '#F8F9FC' }}>
+                  <Box key={i} onClick={() => handleThumbnailClick(i)} sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', flexShrink: 0, border: selectedImage === i ? '2px solid #6C63FF' : '2px solid transparent', cursor: 'pointer', bgcolor: '#F8F9FC' }}>
                     <Image src={img} alt="" fill style={{ objectFit: 'cover' }} />
                   </Box>
                 ))}

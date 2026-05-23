@@ -59,6 +59,7 @@ export interface ProductSku {
   original_price?: number;
   stock: number;
   images?: string[];
+  picture?: string;
   option_values_map: Record<string, string>; // Maps option ID to value ID (e.g. { "opt-color": "val-blue", "opt-size": "val-s" })
 }
 
@@ -99,6 +100,7 @@ export interface ProductVariant {
   value: string;
   price_modifier: number;
   stock: number;
+  picture?: string;
 }
 
 // ---- Cart ----
