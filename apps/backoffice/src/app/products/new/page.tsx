@@ -205,7 +205,7 @@ export default function NewProductPage() {
         id: `sku-${Date.now()}-${index}`,
         sku: skuCode,
         price: basePrice,
-        stock: 10,
+        stock: 0,
         picture: undefined,
         option_values_map: map,
       };
