@@ -1,7 +1,7 @@
 'use client';
 
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { apiClient, Product, useGet } from '@ecommerce/api-client';
+import { apiClient, apiPut, Product, useGet } from '@ecommerce/api-client';
 import { Add as AddIcon, ArrowBack, ArrowForward, CloudUpload, Delete } from '@mui/icons-material';
 import {
   Avatar,
@@ -92,26 +92,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         original_price: values.original_price ? parseFloat(values.original_price) : undefined,
         stock: parseFloat(values.stock)
       }
-      console.log({ body })
-      setSubmitting(false)
-      // try {
-      //   await apiPut(`/admin/products/${params.id}`, {
-      //     ...values,
-      //     category_id: values.category_ids[0] || 'cat-1',
-      //     tags: typeof values.tags === 'string'
-      //       ? values.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      //       : values.tags,
-      //     price: parseFloat(values.price),
-      //     original_price: values.original_price ? parseFloat(values.original_price) : undefined,
-      //     stock: parseFloat(values.stock),
-      //   });
-      //   toast.success('Produk berhasil diperbarui!');
-      //   router.push('/products');
-      // } catch {
-      //   toast.error('Gagal memperbarui produk.');
-      // } finally {
-      //   setSubmitting(false);
-      // }
+
+      try {
+        await apiPut(`/admin/products/${params.id}`, body);
+        toast.success('Produk berhasil diperbarui!');
+        router.push('/products');
+      } catch {
+        toast.error('Gagal memperbarui produk.');
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 
@@ -674,7 +664,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   {formik.values.images.map((img, i) => (
                     <Box key={i} sx={{ position: 'relative', '&:hover .image-actions': { opacity: 1 } }}>
                       <Avatar src={img} variant="rounded" sx={{ width: 80, height: 80, border: i === 0 ? '2px solid #6c63ff' : '1px solid #E5E7EB' }} />
-                      
+
                       {/* Main Image Badge */}
                       {i === 0 && (
                         <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, bgcolor: 'rgba(108,99,255,0.85)', color: 'white', py: 0.25, textAlign: 'center', borderRadius: '0 0 4px 4px', zIndex: 2 }}>
