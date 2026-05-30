@@ -126,7 +126,7 @@ export default function CheckoutPage() {
                     </FormControl>
                   </Grid>
                 </Grid>
-                <Button variant="contained" fullWidth size="large" endIcon={<ArrowForward />} onClick={() => addressForm.submitForm()} sx={{ mt: 4, background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+                <Button variant="contained" fullWidth size="large" endIcon={<ArrowForward />} onClick={() => addressForm.submitForm()} sx={{ mt: 4 }}>
                   Lanjut ke Pembayaran
                 </Button>
               </Card>
@@ -143,7 +143,7 @@ export default function CheckoutPage() {
                     { value: 'ewallet', label: 'E-Wallet (GoPay, OVO, DANA)', icon: <span>💳</span> },
                     { value: 'cod', label: 'Bayar di Tempat (COD)', icon: <span>💵</span> },
                   ].map(({ value, label, icon }) => (
-                    <Card key={value} variant="outlined" sx={{ mb: 2, p: 1, border: paymentMethod === value ? '2px solid #6C63FF' : '1px solid #E5E7EB', cursor: 'pointer' }} onClick={() => setPaymentMethod(value)}>
+                    <Card key={value} variant="outlined" sx={{ mb: 2, p: 1, border: paymentMethod === value ? '2px solid #D26B54' : '1px solid #E5E7EB', cursor: 'pointer' }} onClick={() => setPaymentMethod(value)}>
                       <FormControlLabel value={value} control={<Radio color="primary" />}
                         label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{icon}<Typography fontWeight={500}>{label}</Typography></Box>} />
                     </Card>
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
                 </RadioGroup>
 
                 {paymentMethod === 'credit_card' && (
-                  <Box sx={{ mt: 2, p: 2, bgcolor: '#F8F9FC', borderRadius: 2 }}>
+                  <Box sx={{ mt: 2, p: 2, bgcolor: '#F9F6F2', borderRadius: 2 }}>
                     <Grid container spacing={2}>
                       <Grid item xs={12}><TextField fullWidth label="Nomor Kartu" placeholder="1234 5678 9012 3456" onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); e.target.value = v; }} /></Grid>
                       <Grid item xs={6}><TextField fullWidth label="Berlaku Hingga" placeholder="MM/YY" /></Grid>
@@ -162,7 +162,7 @@ export default function CheckoutPage() {
 
                 <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
                   <Button variant="outlined" size="large" startIcon={<ArrowBack />} onClick={() => setActiveStep(0)} sx={{ flex: 1 }}>Kembali</Button>
-                  <Button variant="contained" size="large" endIcon={<ArrowForward />} onClick={() => setActiveStep(2)} sx={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+                  <Button variant="contained" size="large" endIcon={<ArrowForward />} onClick={() => setActiveStep(2)} sx={{ flex: 2 }}>
                     Review Pesanan
                   </Button>
                 </Box>
@@ -192,7 +192,7 @@ export default function CheckoutPage() {
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Button variant="outlined" size="large" startIcon={<ArrowBack />} onClick={() => setActiveStep(1)} sx={{ flex: 1 }}>Kembali</Button>
-                  <Button variant="contained" size="large" startIcon={!isSubmitting && <CheckCircle />} onClick={handlePlaceOrder} disabled={isSubmitting} sx={{ flex: 2, background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+                  <Button variant="contained" size="large" startIcon={!isSubmitting && <CheckCircle />} onClick={handlePlaceOrder} disabled={isSubmitting} sx={{ flex: 2 }}>
                     {isSubmitting ? 'Memproses...' : 'Konfirmasi Pesanan'}
                   </Button>
                 </Box>

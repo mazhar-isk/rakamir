@@ -62,7 +62,7 @@ export default function ProductsPage() {
       field: 'name', headerName: 'Produk', flex: 2, minWidth: 260, display: 'flex',
       renderCell: (params: GridRenderCellParams<Product>) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-          <Avatar src={params.row.images?.[0]} variant="rounded" sx={{ width: 42, height: 42, bgcolor: '#F3F4F6' }} />
+          <Avatar src={params.row.images?.[0]} variant="rounded" sx={{ width: 42, height: 42, bgcolor: '#F9F6F2' }} />
           <Box>
             <Typography variant="body2" fontWeight={600} noWrap>{params.row.name}</Typography>
             <Typography variant="caption" color="text.secondary">{params.row.category?.name}</Typography>
@@ -105,10 +105,14 @@ export default function ProductsPage() {
           <Typography variant="h5" fontWeight={700}>Manajemen Produk</Typography>
           <Typography variant="body2" color="text.secondary">{data?.meta.total ?? 0} total produk</Typography>
         </Box>
-        <Button component={Link} href="/products/new" variant="contained" startIcon={<Add />}
-          sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
-          Tambah Produk
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Button component={Link} href="/products/stock" variant="outlined" color="primary" startIcon={<Edit />}>
+            Update Stok SKU
+          </Button>
+          <Button component={Link} href="/products/new" variant="contained" startIcon={<Add />}>
+            Tambah Produk
+          </Button>
+        </Box>
       </Box>
 
       <Card sx={{ p: 2, mb: 2 }}>

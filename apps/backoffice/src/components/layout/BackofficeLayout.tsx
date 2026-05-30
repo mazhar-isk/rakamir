@@ -69,7 +69,7 @@ export default function BackofficeLayout({ children }: { children: ReactNode }) 
                 <Badge badgeContent={3} color="error"><Notifications /></Badge>
               </IconButton>
               <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ p: 0.5 }}>
-                <Avatar sx={{ width: 34, height: 34, bgcolor: '#6C63FF', fontSize: '0.875rem' }}>
+                <Avatar sx={{ width: 34, height: 34, bgcolor: '#D26B54', fontSize: '0.875rem' }}>
                   {admin?.name?.[0]?.toUpperCase()}
                 </Avatar>
               </IconButton>
@@ -114,7 +114,7 @@ export default function BackofficeLayout({ children }: { children: ReactNode }) 
           </Toolbar>
         </AppBar>
         {/* Main content */}
-        <Box component="main" sx={{ flex: 1, p: 3, overflowY: 'auto', bgcolor: '#F1F5F9' }}>
+        <Box component="main" sx={{ flex: 1, p: 3, overflowY: 'auto', bgcolor: 'background.default' }}>
           {children}
         </Box>
       </Box>

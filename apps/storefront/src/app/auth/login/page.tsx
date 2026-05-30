@@ -15,7 +15,6 @@ const loginSchema = Yup.object({
   password: Yup.string().required('Password wajib diisi'),
 });
 
-// Inner component that uses useSearchParams — must be wrapped in Suspense
 function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
@@ -40,27 +39,67 @@ function LoginForm() {
   });
 
   return (
-    <Card sx={{ p: 4, borderRadius: 3, boxShadow: '0 24px 80px rgba(0,0,0,0.3)' }}>
-      <Typography variant="h5" fontWeight={700} mb={1}>Selamat Datang!</Typography>
-      <Typography variant="body2" color="text.secondary" mb={4}>Masukkan email dan password Anda</Typography>
+    <Card 
+      sx={{ 
+        p: { xs: 4, sm: 5 }, 
+        borderRadius: '24px', 
+        border: '1px solid rgba(235, 196, 184, 0.2)',
+        boxShadow: '0 20px 50px rgba(110, 98, 92, 0.05)',
+        bgcolor: '#FFFFFF'
+      }}
+    >
+      <Typography variant="h5" fontWeight={700} sx={{ color: '#2E2A27', fontFamily: '"Outfit", sans-serif', mb: 1 }}>
+        Selamat Datang!
+      </Typography>
+      <Typography variant="body2" color="text.secondary" mb={4}>
+        Masukkan email dan password Anda untuk masuk.
+      </Typography>
 
       <form onSubmit={formik.handleSubmit}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
-            fullWidth label="Email" name="email" type="email"
-            value={formik.values.email} onChange={formik.handleChange} onBlur={formik.handleBlur}
+            fullWidth 
+            label="Email" 
+            name="email" 
+            type="email"
+            value={formik.values.email} 
+            onChange={formik.handleChange} 
+            onBlur={formik.handleBlur}
             error={formik.touched.email && Boolean(formik.errors.email)}
             helperText={formik.touched.email && formik.errors.email}
-            InputProps={{ startAdornment: <InputAdornment position="start"><Email sx={{ color: 'text.disabled', fontSize: 20 }} /></InputAdornment> }}
+            InputProps={{ 
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Email sx={{ color: 'text.disabled', fontSize: 20 }} />
+                </InputAdornment>
+              ) 
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                '& fieldset': { borderColor: 'rgba(210, 107, 84, 0.15)' },
+                '&:hover fieldset': { borderColor: '#D26B54' },
+                '&.Mui-focused fieldset': { borderColor: '#D26B54', borderWidth: '2px' }
+              }
+            }}
           />
+          
           <TextField
-            fullWidth label="Password" name="password"
+            fullWidth 
+            label="Password" 
+            name="password"
             type={showPassword ? 'text' : 'password'}
-            value={formik.values.password} onChange={formik.handleChange} onBlur={formik.handleBlur}
+            value={formik.values.password} 
+            onChange={formik.handleChange} 
+            onBlur={formik.handleBlur}
             error={formik.touched.password && Boolean(formik.errors.password)}
             helperText={formik.touched.password && formik.errors.password}
             InputProps={{
-              startAdornment: <InputAdornment position="start"><Lock sx={{ color: 'text.disabled', fontSize: 20 }} /></InputAdornment>,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Lock sx={{ color: 'text.disabled', fontSize: 20 }} />
+                </InputAdornment>
+              ),
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
@@ -69,28 +108,59 @@ function LoginForm() {
                 </InputAdornment>
               ),
             }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                '& fieldset': { borderColor: 'rgba(210, 107, 84, 0.15)' },
+                '&:hover fieldset': { borderColor: '#D26B54' },
+                '&.Mui-focused fieldset': { borderColor: '#D26B54', borderWidth: '2px' }
+              }
+            }}
           />
+
           <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="caption" component={Link} href="#" sx={{ color: 'primary.main', textDecoration: 'none', fontWeight: 600 }}>
+            <Typography 
+              variant="caption" 
+              component={Link} 
+              href="#" 
+              sx={{ color: '#D26B54', textDecoration: 'none', fontWeight: 600, '&:hover': { color: '#B5533E' } }}
+            >
               Lupa Password?
             </Typography>
           </Box>
+
           <Button
-            type="submit" variant="contained" fullWidth size="large"
-            disabled={formik.isSubmitting} endIcon={<ArrowForward />}
-            sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5, fontSize: '1rem' }}
+            type="submit" 
+            variant="contained" 
+            fullWidth 
+            size="large"
+            disabled={formik.isSubmitting} 
+            endIcon={<ArrowForward />}
+            sx={{
+              background: 'linear-gradient(135deg, #D26B54 0%, #EBC4B8 100%)',
+              py: 1.8,
+              borderRadius: '12px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              boxShadow: '0 8px 24px rgba(210,107,84,0.2)',
+              '&:hover': {
+                boxShadow: '0 12px 30px rgba(210,107,84,0.3)',
+                opacity: 0.95
+              }
+            }}
           >
             {formik.isSubmitting ? 'Masuk...' : 'Masuk'}
           </Button>
         </Box>
       </form>
 
-      <Divider sx={{ my: 3 }}>
+      <Divider sx={{ my: 4 }}>
         <Typography variant="caption" color="text.secondary">atau</Typography>
       </Divider>
+
       <Typography variant="body2" textAlign="center" color="text.secondary">
         Belum punya akun?{' '}
-        <Link href="/auth/register" style={{ color: '#6C63FF', fontWeight: 600, textDecoration: 'none' }}>
+        <Link href="/auth/register" style={{ color: '#D26B54', fontWeight: 600, textDecoration: 'none' }}>
           Daftar Sekarang
         </Link>
       </Typography>
@@ -100,13 +170,36 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #F9F6F2 0%, #f5ebe5 60%, #EBC4B8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        background: 'linear-gradient(135deg, #F9F6F2 0%, #F5ECE5 60%, #EBC4B8 100%)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        py: 8, 
+        px: 2 
+      }}
+    >
       <Container maxWidth="sm">
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" fontWeight={800} sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Rakamir Webstore
+        <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Typography 
+            variant="h4" 
+            fontWeight={800} 
+            sx={{ 
+              background: 'linear-gradient(135deg, #D26B54, #EBC4B8)', 
+              WebkitBackgroundClip: 'text', 
+              WebkitTextFillColor: 'transparent',
+              fontFamily: '"Outfit", sans-serif',
+              letterSpacing: '-0.02em',
+              mb: 1
+            }}
+          >
+            Rakamir
           </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>Masuk ke akun Anda</Typography>
+          <Typography variant="body2" sx={{ color: '#7B6E66' }}>
+            Masuk ke akun Rakamir Anda
+          </Typography>
         </Box>
 
         <Suspense fallback={null}>

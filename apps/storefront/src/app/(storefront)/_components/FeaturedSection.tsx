@@ -10,21 +10,42 @@ export default function FeaturedSection() {
   const products = data?.data ?? [];
 
   return (
-    <Box sx={{ py: 8, bgcolor: '#F8F9FC' }}>
+    <Box sx={{ py: 10, bgcolor: '#FFFFFF' }}>
       <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <AutoAwesome sx={{ color: '#6C63FF' }} />
-          <Typography variant="h4" fontWeight={700}>Produk Rekomendasi</Typography>
+        <Box sx={{ mb: 6, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <AutoAwesome sx={{ color: '#D26B54', fontSize: 20 }} />
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#D26B54', 
+                fontWeight: 700, 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.15em', 
+                fontSize: '0.75rem'
+              }}
+            >
+              Curated Collection
+            </Typography>
+          </Box>
+          <Typography 
+            variant="h4" 
+            fontWeight={700}
+            sx={{ 
+              color: '#2E2A27', 
+              fontFamily: '"Outfit", "Inter", sans-serif',
+              letterSpacing: '-0.02em'
+            }}
+          >
+            Koleksi Unggulan
+          </Typography>
         </Box>
-        <Typography variant="body1" color="text.secondary" mb={5}>
-          Dipilih khusus untuk Anda berdasarkan tren terkini
-        </Typography>
 
         <Grid container spacing={3}>
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (
               <Grid item xs={12} sm={6} md={3} key={i}>
-                <Skeleton variant="rounded" height={320} />
+                <Skeleton variant="rounded" height={340} sx={{ borderRadius: '16px' }} />
               </Grid>
             ))
             : products.map((product, i) => (

@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: '#F1F5F9' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: 'background.default' }}>
       {/* Left panel */}
       <Box sx={{
         display: { xs: 'none', md: 'flex' },
@@ -92,7 +92,7 @@ export default function AdminLoginPage() {
                   }}
                 />
                 <Button type="submit" variant="contained" fullWidth size="large" disabled={formik.isSubmitting} endIcon={<ArrowForward />}
-                  sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5 }}>
+                  sx={{ py: 1.5 }}>
                   {formik.isSubmitting ? 'Masuk...' : 'Masuk'}
                 </Button>
               </Box>

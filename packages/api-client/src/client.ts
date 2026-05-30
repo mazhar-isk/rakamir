@@ -34,8 +34,21 @@ const createApiClient = (): AxiosInstance => {
             headers: {},
             config,
           };
-          // Returning via a cancelled request with resolved data
-          config.adapter = () => Promise.resolve(response);
+          // Returning via a cancelled request with resolved data, rejecting on non-2xx status codes
+          config.adapter = () => {
+            const status = parseInt(mock.code, 10) || 200;
+            if (status >= 200 && status < 300) {
+              return Promise.resolve(response);
+            } else {
+              // Properly reject mock errors to match standard axios behavior
+              const err = new Error(mock.message || 'Request failed') as any;
+              err.response = response;
+              err.status = status;
+              err.config = config;
+              err.code = mock.code;
+              return Promise.reject(err);
+            }
+          };
         }
       }
       return config;

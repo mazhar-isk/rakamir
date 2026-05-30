@@ -45,8 +45,8 @@ export default function WishlistPage() {
             ))}
           </Grid>
         ) : (
-          <Box sx={{ textAlign: 'center', py: 8, bgcolor: '#F8F9FC', borderRadius: 4 }}>
-            <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3, color: '#3B82F6' }}>
+          <Box sx={{ textAlign: 'center', py: 8, bgcolor: '#FAF5F2', borderRadius: 4, border: '1px solid rgba(235,196,184,0.2)' }}>
+            <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: 'rgba(235,196,184,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3, color: '#D26B54' }}>
               <FavoriteBorder sx={{ fontSize: 40 }} />
             </Box>
             <Typography variant="h6" fontWeight={700} mb={1}>Wishlist Anda kosong</Typography>

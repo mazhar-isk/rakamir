@@ -18,7 +18,7 @@ export default function CartPage() {
           <Typography fontSize={80} mb={2}>🛒</Typography>
           <Typography variant="h5" fontWeight={700} mb={1}>Keranjang Kosong</Typography>
           <Typography color="text.secondary" mb={4}>Yuk belanja dulu! Temukan produk impian Anda.</Typography>
-          <Button component={Link} href="/products" variant="contained" size="large" sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+          <Button component={Link} href="/products" variant="contained" size="large">
             Mulai Belanja
           </Button>
         </Container>
@@ -37,7 +37,7 @@ export default function CartPage() {
             {items.map((item) => (
               <Card key={item.id} sx={{ mb: 2, p: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Box sx={{ position: 'relative', width: 100, height: 100, flexShrink: 0, borderRadius: 2, overflow: 'hidden', bgcolor: '#F8F9FC' }}>
+                  <Box sx={{ position: 'relative', width: 100, height: 100, flexShrink: 0, borderRadius: 2, overflow: 'hidden', bgcolor: '#F9F6F2' }}>
                     <Image src={item.variant?.picture || item.product.images?.[0] || '/placeholder-product.jpg'} alt={item.product.name} fill style={{ objectFit: 'cover' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
@@ -77,8 +77,7 @@ export default function CartPage() {
                 <Typography fontWeight={700} variant="h6">Total</Typography>
                 <Typography fontWeight={800} variant="h6" color="primary.main">{formatCurrency(total)}</Typography>
               </Box>
-              <Button component={Link} href="/checkout" variant="contained" fullWidth size="large" endIcon={<ArrowForward />}
-                sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5 }}>
+              <Button component={Link} href="/checkout" variant="contained" fullWidth size="large" endIcon={<ArrowForward />}>
                 Lanjut ke Checkout
               </Button>
             </Card>

@@ -59,8 +59,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           <Card sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" fontWeight={700} mb={3}>Produk ({order.items.length})</Typography>
             {order.items.map((item) => (
-              <Box key={item.id} sx={{ display: 'flex', gap: 2, mb: 2, pb: 2, borderBottom: '1px solid #F3F4F6' }}>
-                <Box sx={{ position: 'relative', width: 64, height: 64, borderRadius: 2, overflow: 'hidden', bgcolor: '#F8F9FC', flexShrink: 0 }}>
+              <Box key={item.id} sx={{ display: 'flex', gap: 2, mb: 2, pb: 2, borderBottom: '1px solid rgba(235, 196, 184, 0.2)' }}>
+                <Box sx={{ position: 'relative', width: 64, height: 64, borderRadius: 2, overflow: 'hidden', bgcolor: '#F9F6F2', flexShrink: 0 }}>
                   <Image src={item.product.images?.[0] || '/placeholder.jpg'} alt={item.product.name} fill style={{ objectFit: 'cover' }} />
                 </Box>
                 <Box sx={{ flex: 1 }}>

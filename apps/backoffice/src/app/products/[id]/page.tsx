@@ -225,7 +225,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             <Box
               sx={{
                 width: '100%', height: 340, borderRadius: 3, overflow: 'hidden',
-                bgcolor: '#F8F9FC', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2,
+                bgcolor: '#F9F6F2', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2,
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -246,9 +246,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                     onClick={() => handleThumbnailClick(i)}
                     sx={{
                       width: 72, height: 72, cursor: 'pointer',
-                      border: i === selectedImage ? '2px solid #6C63FF' : '2px solid transparent',
+                      border: i === selectedImage ? '2px solid #D26B54' : '2px solid transparent',
                       transition: 'border-color 0.2s',
-                      '&:hover': { borderColor: '#9D97FF' },
+                      '&:hover': { borderColor: '#EBC4B8' },
                     }}
                   />
                 ))}
@@ -347,8 +347,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 height: 28,
                                 borderRadius: '50%',
                                 bgcolor: hex,
-                                border: isSelected ? '3px solid #6C63FF' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid #E5E7EB'),
-                                boxShadow: isSelected ? '0 0 6px rgba(108,99,255,0.4)' : 'none',
+                                border: isSelected ? '3px solid #D26B54' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid #E5E7EB'),
+                                boxShadow: isSelected ? '0 0 6px rgba(210,107,84,0.4)' : 'none',
                                 cursor: 'pointer',
                                 opacity: isDisabled ? 0.25 : 1,
                                 display: 'flex',

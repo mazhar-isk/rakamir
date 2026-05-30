@@ -100,8 +100,7 @@ export default function CategoriesPage() {
           <Typography variant="h5" fontWeight={700}>Kategori Produk</Typography>
           <Typography variant="body2" color="text.secondary">{items.length} kategori aktif</Typography>
         </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={openCreate}
-          sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+        <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
           Tambah Kategori
         </Button>
       </Box>
@@ -110,7 +109,7 @@ export default function CategoriesPage() {
         {(items || []).map((cat) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={cat.id}>
             <Card sx={{ overflow: 'hidden', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-              <Box sx={{ position: 'relative', width: '100%', height: 140, bgcolor: '#F8F9FC' }}>
+              <Box sx={{ position: 'relative', width: '100%', height: 140, bgcolor: '#F9F6F2' }}>
                 {cat.image ? (
                   <Image src={cat.image} alt={cat.name} fill style={{ objectFit: 'cover' }} />
                 ) : (

@@ -77,7 +77,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useGet<DashboardStats>('/admin/dashboard/stats');
 
   const statCards = [
-    { title: 'Total Pendapatan', value: formatCurrency(stats?.total_revenue ?? 0), growth: stats?.revenue_growth ?? 12.5, icon: <TrendingUp />, color: '#6C63FF' },
+    { title: 'Total Pendapatan', value: formatCurrency(stats?.total_revenue ?? 0), growth: stats?.revenue_growth ?? 12.5, icon: <TrendingUp />, color: '#D26B54' },
     { title: 'Total Pesanan', value: (stats?.total_orders ?? 0).toLocaleString(), growth: stats?.order_growth ?? 8.3, icon: <ShoppingBag />, color: '#22C55E' },
     { title: 'Total Pelanggan', value: (stats?.total_customers ?? 0).toLocaleString(), growth: 5.2, icon: <People />, color: '#06B6D4' },
     { title: 'Total Produk', value: (stats?.total_products ?? 0).toLocaleString(), growth: -2.1, icon: <Inventory2 />, color: '#F59E0B' },
@@ -112,8 +112,8 @@ export default function DashboardPage() {
                   <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(value: number, name: string) => name === 'revenue' ? formatCurrency(value) : value} />
                   <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="revenue" name="Pendapatan" stroke="#6C63FF" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="orders" name="Pesanan" stroke="#FF6584" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line yAxisId="left" type="monotone" dataKey="revenue" name="Pendapatan" stroke="#D26B54" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="orders" name="Pesanan" stroke="#EBC4B8" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </Card>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}jt`} tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  <Bar dataKey="revenue" name="Pendapatan" fill="#6C63FF" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="revenue" name="Pendapatan" fill="#D26B54" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
               <Typography variant="h6" fontWeight={700} mb={3}>Produk Terlaris</Typography>
               {TOP_PRODUCTS.map((p, i) => (
                 <Box key={p.name} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5 }}>
-                  <Box sx={{ width: 28, height: 28, borderRadius: 2, bgcolor: i === 0 ? '#6C63FF' : '#F3F4F6', color: i === 0 ? 'white' : 'text.secondary', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
+                  <Box sx={{ width: 28, height: 28, borderRadius: 2, bgcolor: i === 0 ? '#D26B54' : '#F9F6F2', color: i === 0 ? 'white' : 'text.secondary', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
                     {i + 1}
                   </Box>
                   <Box sx={{ flex: 1, overflow: 'hidden' }}>

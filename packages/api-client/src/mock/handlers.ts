@@ -260,6 +260,87 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     return { code: '200', message: 'success', data: paginate(shipments, page, perPage) };
   }
 
+  // ── UPLOADS ───────────────────────────────────────────────────────────────
+  if (m === 'POST' && path.match(/\/(admin\/)?upload$/)) {
+    const randomId = Math.floor(Math.random() * 1000);
+    return {
+      code: '200',
+      message: 'success',
+      data: {
+        url: `https://picsum.photos/500/500?random=${randomId}`
+      }
+    };
+  }
+
+  // ── STOCK MANAGEMENT ──────────────────────────────────────────────────────
+  if (m === 'GET' && match(path, /\/admin\/products\/sku\/([^/]+)$/)) {
+    const skuCode = path.split('/').pop()!;
+    // Search for a matching SKU in all products
+    for (const p of MOCK_PRODUCTS) {
+      if (p.skus) {
+        const foundSku = p.skus.find((s) => s.sku.toLowerCase() === skuCode.toLowerCase());
+        if (foundSku) {
+          return {
+            code: '200',
+            message: 'success',
+            data: {
+              product_id: p.id,
+              product_name: p.name,
+              sku_id: foundSku.id,
+              sku_code: foundSku.sku,
+              picture: foundSku.picture || p.images?.[0],
+              options_label: Object.entries(foundSku.option_values_map).map(([optId, valId]) => {
+                const opt = p.options?.find(o => o.id === optId);
+                const val = opt?.values?.find(v => v.id === valId);
+                return `${opt?.name || 'Varian'}: ${val?.value || ''}`;
+              }).join(', '),
+              current_stock: foundSku.stock
+            }
+          };
+        }
+      }
+      // If it doesn't have SKUs, check if product ID or slug matches
+      if (p.id.toLowerCase() === skuCode.toLowerCase() || p.slug.toLowerCase() === skuCode.toLowerCase()) {
+        return {
+          code: '200',
+          message: 'success',
+          data: {
+            product_id: p.id,
+            product_name: p.name,
+            sku_id: p.id,
+            sku_code: p.id, // Fallback SKU code to product ID
+            picture: p.images?.[0],
+            options_label: 'Single Product (Tanpa Varian)',
+            current_stock: p.stock
+          }
+        };
+      }
+    }
+    return { code: '404', message: 'not_found', data: { message: `SKU atau Produk "${skuCode}" tidak ditemukan.` } };
+  }
+
+  if (m === 'POST' && path.endsWith('/admin/products/stock/bulk-update')) {
+    const updates = body?.updates ?? [];
+    // Update the local mock data
+    for (const update of updates) {
+      for (const p of MOCK_PRODUCTS) {
+        if (p.skus) {
+          const foundSku = p.skus.find((s) => s.sku.toLowerCase() === update.sku_code.toLowerCase());
+          if (foundSku) {
+            foundSku.stock = update.stock;
+            // Also update total product stock
+            p.stock = p.skus.reduce((acc, curr) => acc + curr.stock, 0);
+            break;
+          }
+        }
+        if (p.id.toLowerCase() === update.sku_code.toLowerCase()) {
+          p.stock = update.stock;
+          break;
+        }
+      }
+    }
+    return { code: '200', message: 'success', data: { message: 'Stok berhasil diperbarui secara massal!' } };
+  }
 
   // ── FAVORITES ─────────────────────────────────────────────────────────────
   if (m === 'GET' && path === '/favorites') {

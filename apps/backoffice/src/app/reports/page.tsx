@@ -74,15 +74,15 @@ export default function ReportsPage() {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6C63FF" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6C63FF" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#D26B54" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#D26B54" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}jt`} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Area type="monotone" dataKey="revenue" name="Pendapatan" stroke="#6C63FF" strokeWidth={2.5} fill="url(#revenueGrad)" />
+                <Area type="monotone" dataKey="revenue" name="Pendapatan" stroke="#D26B54" strokeWidth={2.5} fill="url(#revenueGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </Card>
@@ -98,7 +98,7 @@ export default function ReportsPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="orders" name="Pesanan" fill="#FF6584" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="orders" name="Pesanan" fill="#EBC4B8" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -114,7 +114,7 @@ export default function ReportsPage() {
                 <XAxis type="number" tickFormatter={(v) => `${(v / 1000000).toFixed(0)}jt`} tick={{ fontSize: 11 }} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="revenue" name="Pendapatan" fill="#6C63FF" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="revenue" name="Pendapatan" fill="#D26B54" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -132,8 +132,8 @@ export default function ReportsPage() {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number, name: string) => name === 'Pendapatan' ? formatCurrency(v) : v} />
                 <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="revenue" name="Pendapatan" stroke="#6C63FF" strokeWidth={2.5} dot={{ r: 4 }} />
-                <Line yAxisId="right" type="monotone" dataKey="orders" name="Pesanan" stroke="#22C55E" strokeWidth={2.5} dot={{ r: 4 }} strokeDasharray="5 5" />
+                <Line yAxisId="left" type="monotone" dataKey="revenue" name="Pendapatan" stroke="#D26B54" strokeWidth={2.5} dot={{ r: 4 }} />
+                <Line yAxisId="right" type="monotone" dataKey="orders" name="Pesanan" stroke="#EBC4B8" strokeWidth={2.5} dot={{ r: 4 }} strokeDasharray="5 5" />
               </LineChart>
             </ResponsiveContainer>
           </Card>

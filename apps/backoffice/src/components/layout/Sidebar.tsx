@@ -135,7 +135,7 @@ export default function Sidebar() {
 
       {/* Admin info */}
       <Box sx={{ px: 2, pb: 2, display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
-        <Avatar sx={{ bgcolor: '#6C63FF', width: 38, height: 38, fontSize: '0.9rem', flexShrink: 0 }}>
+        <Avatar sx={{ bgcolor: '#D26B54', width: 38, height: 38, fontSize: '0.9rem', flexShrink: 0 }}>
           {admin?.name?.[0]?.toUpperCase() ?? 'A'}
         </Avatar>
         {!collapsed && (

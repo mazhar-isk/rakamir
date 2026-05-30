@@ -31,7 +31,7 @@ const trackingIcons: Record<string, React.ReactNode> = {
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const { data: order, isLoading: orderLoading } = useGet<Order>(`/account/orders/${params.id}`);
-  console.log({ order })
+
   const { data: tracking } = useGet<ShipmentTracking>(
     order?.tracking_number ? `/shipments/${order.tracking_number}` : null
   );
@@ -76,7 +76,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               <Typography variant="h6" fontWeight={700} mb={3}>Produk Dipesan</Typography>
               {(order.items || [{ id: 1, product: { name: '-', images: [''] }, variant: { value: '-' }, quantity: 1, subtotal: 0 }]).map((item) => (
                 <Box key={item.id} sx={{ display: 'flex', gap: 2, mb: 2, pb: 2, borderBottom: '1px solid #F3F4F6' }}>
-                  <Box sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', bgcolor: '#F8F9FC', flexShrink: 0 }}>
+                  <Box sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', bgcolor: '#FDFBF9', border: '1px solid rgba(235,196,184,0.15)', flexShrink: 0 }}>
                     <Image src={item.product.images?.[0] || 'https://picsum.photos/seed/food/200'} alt={item.product.name} fill style={{ objectFit: 'cover' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
@@ -99,7 +99,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                     <Typography fontWeight={700} sx={{ fontFamily: 'monospace' }}>{tracking.tracking_number}</Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, bgcolor: '#F8F9FC', borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, bgcolor: '#FAF5F2', borderRadius: 2, border: '1px solid rgba(235,196,184,0.2)' }}>
                   <LocalShipping sx={{ color: 'primary.main' }} />
                   <Box>
                     <Typography variant="caption" color="text.secondary">Kurir</Typography>

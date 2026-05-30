@@ -41,8 +41,8 @@ const MOCK_NOTIFICATIONS = [
     title: 'Pengiriman Selesai',
     description: 'Pesanan #ORD-099 telah berhasil dikirim ke tujuan',
     time: '2 hari yang lalu',
-    icon: <LocalShipping sx={{ color: '#6C63FF' }} />,
-    color: '#6C63FF',
+    icon: <LocalShipping sx={{ color: '#D26B54' }} />,
+    color: '#D26B54',
     read: true,
     link: '/shipments',
   },
@@ -71,11 +71,11 @@ export default function NotificationsPage() {
                 p: 3,
                 display: 'flex',
                 gap: 2,
-                bgcolor: notif.read ? 'transparent' : '#F8FAFC',
+                bgcolor: notif.read ? 'transparent' : 'rgba(210, 107, 84, 0.03)',
                 textDecoration: 'none',
                 color: 'inherit',
                 transition: 'background-color 0.2s',
-                '&:hover': { bgcolor: '#F1F5F9' },
+                '&:hover': { bgcolor: 'rgba(210, 107, 84, 0.08)' },
               }}
             >
               <Avatar sx={{ bgcolor: `${notif.color}15`, width: 48, height: 48 }}>

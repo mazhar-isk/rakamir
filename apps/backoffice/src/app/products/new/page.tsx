@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box, Typography, Card, Grid, TextField, Button,
   FormControlLabel, Switch, Divider, IconButton, Avatar,
-  Chip, Table, TableHead, TableRow, TableCell, TableBody, Paper
+  Chip, Table, TableHead, TableRow, TableCell, TableBody, Paper,
+  CircularProgress
 } from '@mui/material';
 import { ArrowBack, CloudUpload, Delete, Add as AddIcon } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiPost } from '@ecommerce/api-client';
+import { apiPost, apiClient } from '@ecommerce/api-client';
 import { toast } from 'react-toastify';
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
 
@@ -36,6 +37,10 @@ const schema = Yup.object({
 export default function NewProductPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingProductImages, setUploadingProductImages] = useState(false);
+  const [uploadingSkus, setUploadingSkus] = useState<Record<number, boolean>>({});
+
+  const isUploading = uploadingProductImages || Object.values(uploadingSkus).some(Boolean);
 
   const formik = useFormik({
     initialValues: {
@@ -81,15 +86,37 @@ export default function NewProductPage() {
     },
   });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const hasDuplicateOptions = formik.values.options.some((opt, idx) => {
+    const isNameDuplicated = opt.name.trim() !== '' && formik.values.options.some((o, oIdx) => oIdx !== idx && o.name.trim().toLowerCase() === opt.name.trim().toLowerCase());
+    const valuesList = opt.rawInput ? opt.rawInput.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+    const isValuesDuplicated = valuesList.some((v, vIdx) => valuesList.indexOf(v) !== vIdx);
+    return isNameDuplicated || isValuesDuplicated;
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        formik.setFieldValue('images', [...formik.values.images, ev.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    if (files.length === 0) return;
+
+    setUploadingProductImages(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await apiClient.post<{ url: string }>('/admin/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return res.data.url;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      formik.setFieldValue('images', [...formik.values.images, ...uploadedUrls]);
+      toast.success(`${files.length} gambar berhasil diunggah.`);
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal mengunggah beberapa gambar.');
+    } finally {
+      setUploadingProductImages(false);
+    }
   };
 
   const removeImage = (idx: number) => {
@@ -131,10 +158,42 @@ export default function NewProductPage() {
 
       const existing = formik.values.skus.find((sku) => {
         if (!sku.option_values_map) return false;
-        return Object.entries(map).every(([oId, vId]) => sku.option_values_map[oId] === vId);
+
+        const newEntries = Object.entries(map);
+        const skuEntries = Object.entries(sku.option_values_map);
+
+        if (newEntries.length !== skuEntries.length) return false;
+
+        return newEntries.every(([oId, vId]) => {
+          const newOpt = options.find(o => o.id === oId);
+          if (!newOpt || !newOpt.name) return false;
+          const newOptName = newOpt.name.trim().toLowerCase();
+
+          const newVal = newOpt.values?.find(v => v.id === vId);
+          if (!newVal || !newVal.value) return false;
+          const newValVal = newVal.value.trim().toLowerCase();
+
+          return skuEntries.some(([prevOId, prevVId]) => {
+            const prevOpt = formik.values.options.find(o => o.id === prevOId);
+            if (!prevOpt || !prevOpt.name) return false;
+            const prevOptName = prevOpt.name.trim().toLowerCase();
+            if (prevOptName !== newOptName) return false;
+
+            const prevVal = prevOpt.values?.find(v => v.id === prevVId);
+            if (!prevVal || !prevVal.value) return false;
+            const prevValVal = prevVal.value.trim().toLowerCase();
+
+            return prevValVal === newValVal;
+          });
+        });
       });
 
-      if (existing) return existing;
+      if (existing) {
+        return {
+          ...existing,
+          option_values_map: map
+        };
+      }
 
       const combCode = comb.map(c => c.valVal.substring(0, 3).toUpperCase()).join('-');
       const prodNameSlug = formik.values.name
@@ -277,64 +336,78 @@ export default function NewProductPage() {
               </Box>
 
               {formik.values.options.length === 0 && (
-                <Box sx={{ py: 3, textAlign: 'center', border: '1px dashed #E5E7EB', borderRadius: 2, bgcolor: '#F8F9FC' }}>
+                <Box sx={{ py: 3, textAlign: 'center', border: '1px dashed #E5E7EB', borderRadius: 2, bgcolor: '#F9F6F2' }}>
                   <Typography variant="body2" color="text.secondary">Belum ada varian yang didefinisikan. Produk akan dijual sebagai varian tunggal.</Typography>
                 </Box>
               )}
 
-              {formik.values.options.map((opt, optIdx) => (
-                <Box key={opt.id} sx={{ p: 2, border: '1px solid #E5E7EB', borderRadius: 2, mb: 2, bgcolor: '#F9FAFB' }}>
-                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                    <TextField
-                      label="Nama Opsi (e.g. Ukuran, Warna)"
-                      value={opt.name}
-                      onChange={(e) => {
-                        const updated = [...formik.values.options];
-                        updated[optIdx].name = e.target.value;
+              {formik.values.options.map((opt, optIdx) => {
+                const isNameDuplicated = opt.name.trim() !== '' && formik.values.options.some((o, oIdx) => oIdx !== optIdx && o.name.trim().toLowerCase() === opt.name.trim().toLowerCase());
+                const valuesList = opt.rawInput ? opt.rawInput.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+                const isValuesDuplicated = valuesList.some((v, vIdx) => valuesList.indexOf(v) !== vIdx);
+
+                return (
+                  <Box key={opt.id} sx={{ p: 2, border: '1px solid #E5E7EB', borderRadius: 2, mb: 2, bgcolor: '#F9F6F2' }}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                      <TextField
+                        label="Nama Opsi (e.g. Ukuran, Warna)"
+                        value={opt.name}
+                        onChange={(e) => {
+                          const updated = [...formik.values.options];
+                          updated[optIdx].name = e.target.value;
+                          formik.setFieldValue('options', updated);
+                        }}
+                        error={isNameDuplicated}
+                        helperText={isNameDuplicated ? "Nama opsi tidak boleh duplikat" : ""}
+                        size="small"
+                        sx={{ width: '40%' }}
+                      />
+                      <Box sx={{ flexGrow: 1 }} />
+                      <IconButton color="error" onClick={() => {
+                        const updated = formik.values.options.filter((_, idx) => idx !== optIdx);
                         formik.setFieldValue('options', updated);
+                        regenerateSkus(updated);
+                      }}>
+                        <Delete />
+                      </IconButton>
+                    </Box>
+                    <TextField
+                      fullWidth
+                      label="Nilai Varian (pisahkan dengan koma, e.g. Merah, Biru, Hijau)"
+                      value={opt.rawInput ?? ''}
+                      onChange={(e) => {
+                        const rawVal = e.target.value;
+                        const valStrings = rawVal.split(',').map(s => s.trim()).filter(Boolean);
+                        const updatedValues = valStrings.map((v, valIdx) => {
+                          const existingVal = opt.values?.find(
+                            (val) => val.value.trim().toLowerCase() === v.trim().toLowerCase()
+                          );
+                          return {
+                            id: existingVal ? existingVal.id : `val-${opt.id}-${Date.now()}-${valIdx}`,
+                            value: v
+                          };
+                        });
+                        const updatedOptions = [...formik.values.options];
+                        updatedOptions[optIdx].rawInput = rawVal;
+                        updatedOptions[optIdx].values = updatedValues;
+                        formik.setFieldValue('options', updatedOptions);
+                        regenerateSkus(updatedOptions);
                       }}
+                      error={isValuesDuplicated}
                       size="small"
-                      sx={{ width: '40%' }}
+                      placeholder="e.g. S, M, L"
+                      helperText={isValuesDuplicated ? "Nilai varian tidak boleh duplikat" : "Ketik nilai dan pisahkan dengan tanda koma ( , )"}
                     />
-                    <Box sx={{ flexGrow: 1 }} />
-                    <IconButton color="error" onClick={() => {
-                      const updated = formik.values.options.filter((_, idx) => idx !== optIdx);
-                      formik.setFieldValue('options', updated);
-                      regenerateSkus(updated);
-                    }}>
-                      <Delete />
-                    </IconButton>
                   </Box>
-                  <TextField
-                    fullWidth
-                    label="Nilai Varian (pisahkan dengan koma, e.g. Merah, Biru, Hijau)"
-                    value={opt.rawInput ?? ''}
-                    onChange={(e) => {
-                      const rawVal = e.target.value;
-                      const valStrings = rawVal.split(',').map(s => s.trim()).filter(Boolean);
-                      const updatedValues = valStrings.map((v, valIdx) => ({
-                        id: `val-${opt.id}-${valIdx}`,
-                        value: v
-                      }));
-                      const updatedOptions = [...formik.values.options];
-                      updatedOptions[optIdx].rawInput = rawVal;
-                      updatedOptions[optIdx].values = updatedValues;
-                      formik.setFieldValue('options', updatedOptions);
-                      regenerateSkus(updatedOptions);
-                    }}
-                    size="small"
-                    placeholder="e.g. S, M, L"
-                    helperText="Ketik nilai dan pisahkan dengan tanda koma ( , )"
-                  />
-                </Box>
-              ))}
+                );
+              })}
 
               {formik.values.skus.length > 0 && (
                 <Box sx={{ mt: 4 }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>Tabel SKU Varian</Typography>
                   <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
-                      <TableHead sx={{ bgcolor: '#F3F4F6' }}>
+                      <TableHead sx={{ bgcolor: '#FDF5F2' }}>
                         <TableRow>
                           <TableCell sx={{ fontWeight: 700 }}>Varian</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Foto</TableCell>
@@ -351,31 +424,59 @@ export default function NewProductPage() {
                             </TableCell>
                             <TableCell>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ position: 'relative', width: 40, height: 40, borderRadius: 1, overflow: 'hidden', border: '1px solid #E5E7EB', cursor: 'pointer', '&:hover .upload-overlay': { opacity: 1 } }} onClick={() => document.getElementById(`sku-file-input-${index}`)?.click()}>
+                                <Box
+                                  sx={{
+                                    position: 'relative',
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    border: '1px solid #E5E7EB',
+                                    cursor: uploadingSkus[index] ? 'default' : 'pointer',
+                                    '&:hover .upload-overlay': { opacity: uploadingSkus[index] ? 0 : 1 }
+                                  }}
+                                  onClick={() => !uploadingSkus[index] && document.getElementById(`sku-file-input-${index}`)?.click()}
+                                >
                                   <Avatar 
                                     src={sku.picture} 
                                     variant="rounded" 
                                     sx={{ width: '100%', height: '100%' }}
                                   />
-                                  <Box className="upload-overlay" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' }}>
-                                    <CloudUpload sx={{ fontSize: 16 }} />
-                                  </Box>
+                                  {uploadingSkus[index] ? (
+                                    <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <CircularProgress size={16} sx={{ color: 'white' }} />
+                                    </Box>
+                                  ) : (
+                                    <Box className="upload-overlay" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' }}>
+                                      <CloudUpload sx={{ fontSize: 16 }} />
+                                    </Box>
+                                  )}
                                 </Box>
                                 <input
                                   id={`sku-file-input-${index}`}
                                   type="file"
                                   accept="image/*"
                                   hidden
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                      const reader = new FileReader();
-                                      reader.onload = (ev) => {
+                                      setUploadingSkus((prev) => ({ ...prev, [index]: true }));
+                                      try {
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        const res = await apiClient.post<{ url: string }>('/admin/upload', formData, {
+                                          headers: { 'Content-Type': 'multipart/form-data' },
+                                        });
                                         const nextSkus = [...formik.values.skus];
-                                        nextSkus[index].picture = ev.target?.result as string;
+                                        nextSkus[index].picture = res.data.url;
                                         formik.setFieldValue('skus', nextSkus);
-                                      };
-                                      reader.readAsDataURL(file);
+                                        toast.success('Foto SKU berhasil diunggah.');
+                                      } catch (error) {
+                                        console.error(error);
+                                        toast.error('Gagal mengunggah foto SKU.');
+                                      } finally {
+                                        setUploadingSkus((prev) => ({ ...prev, [index]: false }));
+                                      }
                                     }
                                   }}
                                 />
@@ -453,7 +554,7 @@ export default function NewProductPage() {
                 <Typography variant="caption" color="text.disabled">PNG, JPG, WEBP hingga 5MB</Typography>
                 <input ref={fileInputRef} type="file" multiple accept="image/*" hidden onChange={handleImageUpload} />
               </Box>
-              {formik.values.images.length > 0 && (
+              {(formik.values.images.length > 0 || uploadingProductImages) && (
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 2 }}>
                   {formik.values.images.map((img, i) => (
                     <Box key={i} sx={{ position: 'relative' }}>
@@ -464,6 +565,11 @@ export default function NewProductPage() {
                       </IconButton>
                     </Box>
                   ))}
+                  {uploadingProductImages && (
+                    <Box sx={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #D1D5DB', borderRadius: 2, bgcolor: 'rgba(0,0,0,0.02)' }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  )}
                 </Box>
               )}
             </Card>
@@ -478,9 +584,9 @@ export default function NewProductPage() {
                 <FormControlLabel control={<Switch checked={formik.values.is_new} onChange={(e) => formik.setFieldValue('is_new', e.target.checked)} color="primary" />} label="Tandai sebagai Produk Baru" />
               </Box>
             </Card>
-            <Button type="submit" variant="contained" fullWidth size="large" disabled={formik.isSubmitting}
-              sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5 }}>
-              {formik.isSubmitting ? 'Menyimpan...' : 'Simpan Produk'}
+            <Button type="submit" variant="contained" fullWidth size="large" disabled={formik.isSubmitting || isUploading || hasDuplicateOptions}
+              sx={{ py: 1.5 }}>
+              {formik.isSubmitting ? 'Menyimpan...' : isUploading ? 'Mengunggah Gambar...' : hasDuplicateOptions ? 'Varian Duplikat' : 'Simpan Produk'}
             </Button>
             <Button component={Link} href="/products" variant="outlined" fullWidth size="large" sx={{ mt: 1.5 }}>
               Batal

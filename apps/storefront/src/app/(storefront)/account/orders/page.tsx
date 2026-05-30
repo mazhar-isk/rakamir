@@ -29,7 +29,7 @@ export default function OrdersPage() {
             <Typography fontSize={64} mb={2}>📦</Typography>
             <Typography variant="h6" fontWeight={700} mb={1}>Belum ada pesanan</Typography>
             <Typography color="text.secondary" mb={4}>Mulai belanja dan pesanan Anda akan muncul di sini.</Typography>
-            <Button component={Link} href="/products" variant="contained" sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+            <Button component={Link} href="/products" variant="contained">
               Mulai Belanja
             </Button>
           </Box>

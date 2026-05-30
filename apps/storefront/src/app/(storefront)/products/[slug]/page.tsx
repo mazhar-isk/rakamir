@@ -3,9 +3,10 @@
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useWishlist } from '@/contexts/WishlistContext';
 import { Product, ProductVariant, useGet } from '@ecommerce/api-client';
 import { formatCurrency } from '@ecommerce/utils';
-import { Add, Favorite, LocalShipping, Remove, Share, Shield, ShoppingCart, SwapHoriz } from '@mui/icons-material';
+import { Add, Favorite, FavoriteBorder, LocalShipping, Remove, Share, Shield, ShoppingCart, SwapHoriz } from '@mui/icons-material';
 import { Box, Button, Chip, Container, Divider, Grid, IconButton, Rating, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -16,12 +17,25 @@ import { toast } from 'react-toastify';
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   const { data: product, isLoading } = useGet<Product>(`/products/${params.slug}`);
   const { addItem } = useCart();
+
   const { isAuthenticated } = useAuth();
+  const { favoriteIds, toggleFavorite } = useWishlist();
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [tab, setTab] = useState(0);
-  
+
+  const isFavorite = product ? favoriteIds.includes(product.id) : false;
+
+  const handleToggleFavorite = () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      toast.info('Silakan login terlebih dahulu untuk menyimpan ke favorit.');
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    toggleFavorite(product.id, product.name);
+  };
   // Track selected options: Record<optionId, valueId>
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
@@ -203,12 +217,12 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
           {/* Images */}
           <Grid item xs={12} md={6}>
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-              <Box sx={{ position: 'relative', height: 480, borderRadius: 3, overflow: 'hidden', bgcolor: '#F8F9FC', mb: 2 }}>
+              <Box sx={{ position: 'relative', height: 480, borderRadius: 3, overflow: 'hidden', bgcolor: '#FDFBF9', mb: 2, border: '1px solid rgba(235,196,184,0.15)' }}>
                 <Image src={images[selectedImage] || '/placeholder-product.jpg'} alt={product.name} fill style={{ objectFit: 'contain' }} />
               </Box>
               <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto' }}>
                 {images.map((img, i) => (
-                  <Box key={i} onClick={() => handleThumbnailClick(i)} sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', flexShrink: 0, border: selectedImage === i ? '2px solid #6C63FF' : '2px solid transparent', cursor: 'pointer', bgcolor: '#F8F9FC' }}>
+                  <Box key={i} onClick={() => handleThumbnailClick(i)} sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', flexShrink: 0, border: selectedImage === i ? '2px solid #D26B54' : '2px solid transparent', cursor: 'pointer', bgcolor: '#FDFBF9' }}>
                     <Image src={img} alt="" fill style={{ objectFit: 'cover' }} />
                   </Box>
                 ))}
@@ -283,8 +297,8 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                               height: 38,
                               borderRadius: '50%',
                               bgcolor: hex,
-                              border: isSelected ? '3px solid #6C63FF' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid #E5E7EB'),
-                              boxShadow: isSelected ? '0 0 8px rgba(108,99,255,0.4)' : 'none',
+                              border: isSelected ? '3px solid #D26B54' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid #E5E7EB'),
+                              boxShadow: isSelected ? '0 0 8px rgba(210,107,84,0.3)' : 'none',
                               cursor: 'pointer',
                               opacity: isDisabled ? 0.25 : 1,
                               display: 'flex',
@@ -315,17 +329,17 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                             px: 3,
                             py: 1,
                             borderRadius: 2,
-                            border: isSelected ? '2px solid #6C63FF' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid #E5E7EB'),
-                            bgcolor: isSelected ? 'rgba(108,99,255,0.06)' : (isDisabled ? '#F9FAFB' : 'white'),
-                            color: isSelected ? '#6C63FF' : (isDisabled ? '#9CA3AF' : 'text.primary'),
+                            border: isSelected ? '2px solid #D26B54' : (isDisabled ? '1px dashed #E5E7EB' : '1px solid rgba(235,196,184,0.4)'),
+                            bgcolor: isSelected ? 'rgba(210,107,84,0.06)' : (isDisabled ? '#F9FAFB' : 'white'),
+                            color: isSelected ? '#D26B54' : (isDisabled ? '#9CA3AF' : 'text.primary'),
                             fontWeight: isSelected ? 700 : 500,
                             cursor: 'pointer',
                             opacity: isDisabled ? 0.35 : 1,
                             transition: 'all 0.2s',
                             userSelect: 'none',
                             '&:hover': {
-                              borderColor: '#6C63FF',
-                              bgcolor: 'rgba(108,99,255,0.02)'
+                              borderColor: '#D26B54',
+                              bgcolor: 'rgba(210,107,84,0.02)'
                             }
                           }}
                         >
@@ -340,7 +354,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
               {/* Quantity */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4, mt: product.options?.length ? 1 : 3 }}>
                 <Typography fontWeight={600}>Jumlah:</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid #E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(235,196,184,0.4)', borderRadius: 2, overflow: 'hidden' }}>
                   <IconButton onClick={() => setQty(Math.max(1, qty - 1))} size="small" disabled={currentStock === 0}><Remove fontSize="small" /></IconButton>
                   <Typography sx={{ px: 3, minWidth: 40, textAlign: 'center', fontWeight: 600 }}>{currentStock === 0 ? 0 : qty}</Typography>
                   <IconButton onClick={() => setQty(Math.min(currentStock, qty + 1))} size="small" disabled={currentStock === 0}><Add fontSize="small" /></IconButton>
@@ -354,15 +368,16 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
               <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
                 <Button variant="contained" size="large" startIcon={<ShoppingCart />} onClick={handleAddToCart} fullWidth
                   disabled={currentStock === 0}
-                  sx={{ background: currentStock === 0 ? '#CCCCCC' : 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5 }}>
+                  sx={{ py: 1.5 }}>
                   {currentStock === 0 ? 'Stok Varian Habis' : 'Tambah ke Keranjang'}
                 </Button>
-                <IconButton sx={{ border: '1px solid #E5E7EB', borderRadius: 2 }}><Favorite /></IconButton>
-                <IconButton sx={{ border: '1px solid #E5E7EB', borderRadius: 2 }}><Share /></IconButton>
+                <IconButton sx={{ border: '1px solid rgba(235,196,184,0.4)', borderRadius: 2, color: isFavorite ? '#D26B54' : 'text.secondary', '&:hover': { borderColor: '#D26B54', color: '#D26B54' }, transition: 'all 0.2s' }} onClick={handleToggleFavorite}>
+                  {isFavorite ? <Favorite sx={{ color: 'primary.main' }} /> : <FavoriteBorder />}
+                </IconButton>
               </Box>
 
               {/* Guarantees */}
-              <Box sx={{ bgcolor: '#F8F9FC', borderRadius: 2, p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ bgcolor: '#F9F6F2', borderRadius: 2, p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {[{ Icon: LocalShipping, text: 'Gratis ongkir untuk pembelian di atas Rp 100.000' },
                 { Icon: Shield, text: 'Garansi uang kembali 7 hari' },
                 { Icon: SwapHoriz, text: 'Penukaran barang mudah' }].map(({ Icon, text }) => (
@@ -378,7 +393,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
         {/* Tabs */}
         <Box sx={{ mt: 8 }}>
-          <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: '1px solid #E5E7EB', mb: 4 }}>
+          <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: '1px solid rgba(235,196,184,0.3)', mb: 4 }}>
             <Tab label="Deskripsi" />
             <Tab label="Ulasan" />
           </Tabs>

@@ -43,18 +43,53 @@ export default function RegisterPage() {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0F0C29 0%, #302B63 60%, #24243E 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        background: 'linear-gradient(135deg, #F9F6F2 0%, #F5ECE5 60%, #EBC4B8 100%)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        py: 8, 
+        px: 2 
+      }}
+    >
       <Container maxWidth="sm">
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" fontWeight={800} sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Rakamir Webstore
+        <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Typography 
+            variant="h4" 
+            fontWeight={800} 
+            sx={{ 
+              background: 'linear-gradient(135deg, #D26B54, #EBC4B8)', 
+              WebkitBackgroundClip: 'text', 
+              WebkitTextFillColor: 'transparent',
+              fontFamily: '"Outfit", sans-serif',
+              letterSpacing: '-0.02em',
+              mb: 1
+            }}
+          >
+            Rakamir
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mt: 1 }}>Buat akun baru Anda</Typography>
+          <Typography variant="body2" sx={{ color: '#7B6E66' }}>
+            Buat akun baru Rakamir Anda
+          </Typography>
         </Box>
 
-        <Card sx={{ p: 4, borderRadius: 3, boxShadow: '0 24px 80px rgba(0,0,0,0.3)' }}>
-          <Typography variant="h5" fontWeight={700} mb={1}>Daftar Sekarang</Typography>
-          <Typography variant="body2" color="text.secondary" mb={4}>Bergabunglah dengan jutaan pembeli di Rakamir Webstore</Typography>
+        <Card 
+          sx={{ 
+            p: { xs: 4, sm: 5 }, 
+            borderRadius: '24px', 
+            border: '1px solid rgba(235, 196, 184, 0.2)',
+            boxShadow: '0 20px 50px rgba(110, 98, 92, 0.05)',
+            bgcolor: '#FFFFFF'
+          }}
+        >
+          <Typography variant="h5" fontWeight={700} sx={{ color: '#2E2A27', fontFamily: '"Outfit", sans-serif', mb: 1 }}>
+            Daftar Sekarang
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={4}>
+            Bergabunglah dengan pelanggan Rakamir lainnya.
+          </Typography>
 
           <form onSubmit={formik.handleSubmit}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -63,19 +98,38 @@ export default function RegisterPage() {
                 { name: 'email', label: 'Email', type: 'email', icon: <Email sx={{ color: 'text.disabled', fontSize: 20 }} /> },
               ].map(({ name, label, type, icon }) => (
                 <TextField
-                  key={name} fullWidth label={label} name={name} type={type}
-                  value={(formik.values as any)[name]} onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  key={name} 
+                  fullWidth 
+                  label={label} 
+                  name={name} 
+                  type={type}
+                  value={(formik.values as any)[name]} 
+                  onChange={formik.handleChange} 
+                  onBlur={formik.handleBlur}
                   error={(formik.touched as any)[name] && Boolean((formik.errors as any)[name])}
                   helperText={(formik.touched as any)[name] && (formik.errors as any)[name]}
                   InputProps={{ startAdornment: <InputAdornment position="start">{icon}</InputAdornment> }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      '& fieldset': { borderColor: 'rgba(210, 107, 84, 0.15)' },
+                      '&:hover fieldset': { borderColor: '#D26B54' },
+                      '&.Mui-focused fieldset': { borderColor: '#D26B54', borderWidth: '2px' }
+                    }
+                  }}
                 />
               ))}
+              
               {['password', 'password_confirmation'].map((field) => (
                 <TextField
-                  key={field} fullWidth
+                  key={field} 
+                  fullWidth
                   label={field === 'password' ? 'Password' : 'Konfirmasi Password'}
-                  name={field} type={showPassword ? 'text' : 'password'}
-                  value={(formik.values as any)[field]} onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  name={field} 
+                  type={showPassword ? 'text' : 'password'}
+                  value={(formik.values as any)[field]} 
+                  onChange={formik.handleChange} 
+                  onBlur={formik.handleBlur}
                   error={(formik.touched as any)[field] && Boolean((formik.errors as any)[field])}
                   helperText={(formik.touched as any)[field] && (formik.errors as any)[field]}
                   InputProps={{
@@ -88,21 +142,51 @@ export default function RegisterPage() {
                       </InputAdornment>
                     ) : undefined,
                   }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      '& fieldset': { borderColor: 'rgba(210, 107, 84, 0.15)' },
+                      '&:hover fieldset': { borderColor: '#D26B54' },
+                      '&.Mui-focused fieldset': { borderColor: '#D26B54', borderWidth: '2px' }
+                    }
+                  }}
                 />
               ))}
+
               <Button
-                type="submit" variant="contained" fullWidth size="large"
-                disabled={formik.isSubmitting} endIcon={<ArrowForward />}
-                sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)', py: 1.5, fontSize: '1rem' }}
+                type="submit" 
+                variant="contained" 
+                fullWidth 
+                size="large"
+                disabled={formik.isSubmitting} 
+                endIcon={<ArrowForward />}
+                sx={{
+                  background: 'linear-gradient(135deg, #D26B54 0%, #EBC4B8 100%)',
+                  py: 1.8,
+                  borderRadius: '12px',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  boxShadow: '0 8px 24px rgba(210,107,84,0.2)',
+                  '&:hover': {
+                    boxShadow: '0 12px 30px rgba(210,107,84,0.3)',
+                    opacity: 0.95
+                  }
+                }}
               >
                 {formik.isSubmitting ? 'Mendaftar...' : 'Daftar'}
               </Button>
             </Box>
           </form>
-          <Divider sx={{ my: 3 }}><Typography variant="caption" color="text.secondary">atau</Typography></Divider>
+
+          <Divider sx={{ my: 4 }}>
+            <Typography variant="caption" color="text.secondary">atau</Typography>
+          </Divider>
+          
           <Typography variant="body2" textAlign="center" color="text.secondary">
             Sudah punya akun?{' '}
-            <Link href="/auth/login" style={{ color: '#6C63FF', fontWeight: 600, textDecoration: 'none' }}>Masuk</Link>
+            <Link href="/auth/login" style={{ color: '#D26B54', fontWeight: 600, textDecoration: 'none' }}>
+              Masuk
+            </Link>
           </Typography>
         </Card>
       </Container>

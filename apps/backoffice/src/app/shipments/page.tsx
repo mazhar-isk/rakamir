@@ -94,7 +94,7 @@ function ShipmentDrawer({ shipment, onClose }: { shipment: AdminShipment | null;
       PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, p: 0 } }}
     >
       {/* Header */}
-      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F3F4F6' }}>
+      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(235, 196, 184, 0.2)' }}>
         <Box>
           <Typography variant="h6" fontWeight={700}>Detail Pengiriman</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
@@ -125,7 +125,7 @@ function ShipmentDrawer({ shipment, onClose }: { shipment: AdminShipment | null;
         ))}
 
         {/* Tracking number */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#F8F9FC', borderRadius: 2, px: 2, py: 1.5, mt: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#F9F6F2', borderRadius: 2, px: 2, py: 1.5, mt: 1 }}>
           <Box>
             <Typography variant="caption" color="text.secondary">No. Resi</Typography>
             <Typography variant="body2" fontWeight={700} sx={{ fontFamily: 'monospace', color: 'primary.main' }}>

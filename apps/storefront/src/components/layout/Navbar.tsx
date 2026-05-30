@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 const navLinks = [
@@ -50,6 +50,14 @@ export default function Navbar() {
   const { favoriteIds } = useWishlist();
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHome = pathname === '/';
+  
+  const isScrolled = useScrollTrigger({
+    disableHysteresis: true,
+    threshold: 10,
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -66,9 +74,10 @@ export default function Navbar() {
           position="fixed"
           elevation={0}
           sx={{
-            backgroundColor: 'rgba(249, 246, 242,0.95)',
-            backdropFilter: 'blur(10px)',
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            backgroundColor: isHome ? (isScrolled ? 'rgba(249, 246, 242, 0.85)' : 'transparent') : 'rgba(249, 246, 242, 0.95)',
+            backdropFilter: isHome ? (isScrolled ? 'blur(20px)' : 'none') : 'blur(10px)',
+            borderBottom: isHome ? (isScrolled ? '1px solid rgba(210, 107, 84, 0.08)' : '1px solid transparent') : '1px solid rgba(0,0,0,0.06)',
+            transition: 'all 0.3s ease',
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 }, py: 1 }}>
@@ -189,7 +198,7 @@ export default function Navbar() {
       </Drawer>
 
       {/* Spacer */}
-      <Toolbar sx={{ mb: 1 }} />
+      {!isHome && <Toolbar sx={{ mb: 1 }} />}
     </>
   );
 }

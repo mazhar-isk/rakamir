@@ -40,7 +40,7 @@ const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[] = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  superadmin: '#6C63FF', product_manager: '#22C55E', order_manager: '#06B6D4',
+  superadmin: '#D26B54', product_manager: '#22C55E', order_manager: '#06B6D4',
   customer_service: '#F59E0B', finance: '#EC4899',
 };
 
@@ -124,8 +124,7 @@ export default function RolesPage() {
           <Typography variant="h5" fontWeight={700}>Role & Izin Akses</Typography>
           <Typography variant="body2" color="text.secondary">Kelola role dan hak akses admin</Typography>
         </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={openCreate}
-          sx={{ background: 'linear-gradient(135deg, #6C63FF, #FF6584)' }}>
+        <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
           Tambah Role
         </Button>
       </Box>
