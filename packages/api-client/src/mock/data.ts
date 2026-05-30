@@ -53,6 +53,7 @@ export const MOCK_PRODUCTS: Product[] = [
       { id: 'sku-iphone-512-blk', sku: 'IPH15P-512-BLK', price: 22999000, stock: 12, picture: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-black' } },
       { id: 'sku-iphone-512-blu', sku: 'IPH15P-512-BLU', price: 23199000, stock: 6, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-blue' } },
       // 1TB SKUs
+      { id: 'sku-iphone-1tb-blu', sku: 'IPH15P-1TB-BLU', price: 26999000, original_price: 28999000, stock: 0, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-blue' } },
       { id: 'sku-iphone-1tb-slv', sku: 'IPH15P-1TB-SLV', price: 26999000, original_price: 28999000, stock: 4, picture: 'https://picsum.photos/seed/iphone15silver/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-silver' } },
       { id: 'sku-iphone-1tb-org', sku: 'IPH15P-1TB-ORG', price: 27499000, original_price: 29499000, stock: 3, picture: 'https://picsum.photos/seed/iphone15orange/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-orange' } }
     ]

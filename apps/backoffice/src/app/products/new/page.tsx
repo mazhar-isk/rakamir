@@ -7,7 +7,7 @@ import {
   Chip, Table, TableHead, TableRow, TableCell, TableBody, Paper,
   CircularProgress
 } from '@mui/material';
-import { ArrowBack, CloudUpload, Delete, Add as AddIcon } from '@mui/icons-material';
+import { ArrowBack, ArrowForward, CloudUpload, Delete, Add as AddIcon } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Link from 'next/link';
@@ -39,6 +39,7 @@ export default function NewProductPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingProductImages, setUploadingProductImages] = useState(false);
   const [uploadingSkus, setUploadingSkus] = useState<Record<number, boolean>>({});
+  const [deletedCombinations, setDeletedCombinations] = useState<Record<string, string>[]>([]);
 
   const isUploading = uploadingProductImages || Object.values(uploadingSkus).some(Boolean);
 
@@ -123,6 +124,17 @@ export default function NewProductPage() {
     formik.setFieldValue('images', formik.values.images.filter((_, i) => i !== idx));
   };
 
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    const nextImages = [...formik.values.images];
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < nextImages.length) {
+      const temp = nextImages[index];
+      nextImages[index] = nextImages[targetIndex];
+      nextImages[targetIndex] = temp;
+      formik.setFieldValue('images', nextImages);
+    }
+  };
+
   const regenerateSkus = (options: typeof formik.values.options) => {
     if (options.length === 0 || options.every(o => !o.values || o.values.length === 0)) {
       formik.setFieldValue('skus', []);
@@ -150,66 +162,90 @@ export default function NewProductPage() {
 
     const basePrice = parseFloat(formik.values.price) || 0;
 
-    const nextSkus = combinations.map((comb, index) => {
-      const map: Record<string, string> = {};
-      comb.forEach(item => {
-        map[item.optId] = item.valId;
-      });
+    const nextSkus = combinations
+      .map((comb, index) => {
+        const map: Record<string, string> = {};
+        comb.forEach(item => {
+          map[item.optId] = item.valId;
+        });
 
-      const existing = formik.values.skus.find((sku) => {
-        if (!sku.option_values_map) return false;
+        // Check if this combination was deleted by the user
+        const isDeleted = deletedCombinations.some(deletedMap => {
+          const newEntries = Object.entries(map);
+          const deletedEntries = Object.entries(deletedMap);
+          if (newEntries.length !== deletedEntries.length) return false;
 
-        const newEntries = Object.entries(map);
-        const skuEntries = Object.entries(sku.option_values_map);
+          return newEntries.every(([oId, vId]) => {
+            const newOpt = options.find(o => o.id === oId);
+            const newVal = newOpt?.values?.find(v => v.id === vId);
+            const newValVal = newVal?.value?.trim().toLowerCase();
 
-        if (newEntries.length !== skuEntries.length) return false;
+            const delOpt = formik.values.options.find(o => o.id === oId) || options.find(o => o.id === oId);
+            const delValId = deletedMap[oId];
+            const delVal = delOpt?.values?.find(v => v.id === delValId);
+            const delValVal = delVal?.value?.trim().toLowerCase();
 
-        return newEntries.every(([oId, vId]) => {
-          const newOpt = options.find(o => o.id === oId);
-          if (!newOpt || !newOpt.name) return false;
-          const newOptName = newOpt.name.trim().toLowerCase();
-
-          const newVal = newOpt.values?.find(v => v.id === vId);
-          if (!newVal || !newVal.value) return false;
-          const newValVal = newVal.value.trim().toLowerCase();
-
-          return skuEntries.some(([prevOId, prevVId]) => {
-            const prevOpt = formik.values.options.find(o => o.id === prevOId);
-            if (!prevOpt || !prevOpt.name) return false;
-            const prevOptName = prevOpt.name.trim().toLowerCase();
-            if (prevOptName !== newOptName) return false;
-
-            const prevVal = prevOpt.values?.find(v => v.id === prevVId);
-            if (!prevVal || !prevVal.value) return false;
-            const prevValVal = prevVal.value.trim().toLowerCase();
-
-            return prevValVal === newValVal;
+            return newValVal === delValVal;
           });
         });
-      });
 
-      if (existing) {
+        if (isDeleted) return null;
+
+        const existing = formik.values.skus.find((sku) => {
+          if (!sku.option_values_map) return false;
+
+          const newEntries = Object.entries(map);
+          const skuEntries = Object.entries(sku.option_values_map);
+
+          if (newEntries.length !== skuEntries.length) return false;
+
+          return newEntries.every(([oId, vId]) => {
+            const newOpt = options.find(o => o.id === oId);
+            if (!newOpt || !newOpt.name) return false;
+            const newOptName = newOpt.name.trim().toLowerCase();
+
+            const newVal = newOpt.values?.find(v => v.id === vId);
+            if (!newVal || !newVal.value) return false;
+            const newValVal = newVal.value.trim().toLowerCase();
+
+            return skuEntries.some(([prevOId, prevVId]) => {
+              const prevOpt = formik.values.options.find(o => o.id === prevOId);
+              if (!prevOpt || !prevOpt.name) return false;
+              const prevOptName = prevOpt.name.trim().toLowerCase();
+              if (prevOptName !== newOptName) return false;
+
+              const prevVal = prevOpt.values?.find(v => v.id === prevVId);
+              if (!prevVal || !prevVal.value) return false;
+              const prevValVal = prevVal.value.trim().toLowerCase();
+
+              return prevValVal === newValVal;
+            });
+          });
+        });
+
+        if (existing) {
+          return {
+            ...existing,
+            option_values_map: map
+          };
+        }
+
+        const combCode = comb.map(c => c.valVal.substring(0, 3).toUpperCase()).join('-');
+        const prodNameSlug = formik.values.name
+          ? formik.values.name.substring(0, 5).toUpperCase().replace(/\s+/g, '')
+          : 'PROD';
+        const skuCode = `${prodNameSlug}-${combCode}-${index + 1}`;
+
         return {
-          ...existing,
-          option_values_map: map
+          id: `sku-${Date.now()}-${index}`,
+          sku: skuCode,
+          price: basePrice,
+          stock: 0,
+          picture: undefined,
+          option_values_map: map,
         };
-      }
-
-      const combCode = comb.map(c => c.valVal.substring(0, 3).toUpperCase()).join('-');
-      const prodNameSlug = formik.values.name
-        ? formik.values.name.substring(0, 5).toUpperCase().replace(/\s+/g, '')
-        : 'PROD';
-      const skuCode = `${prodNameSlug}-${combCode}-${index + 1}`;
-
-      return {
-        id: `sku-${Date.now()}-${index}`,
-        sku: skuCode,
-        price: basePrice,
-        stock: 0,
-        picture: undefined,
-        option_values_map: map,
-      };
-    });
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
 
     formik.setFieldValue('skus', nextSkus);
 
@@ -414,6 +450,7 @@ export default function NewProductPage() {
                           <TableCell sx={{ fontWeight: 700 }}>Kode SKU</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Harga Jual (Rp)</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Stok</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }} align="right">Aksi</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -534,6 +571,21 @@ export default function NewProductPage() {
                                 sx={{ width: 80 }}
                               />
                             </TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                  setDeletedCombinations(prev => [...prev, sku.option_values_map]);
+                                  const nextSkus = formik.values.skus.filter((_, i) => i !== index);
+                                  formik.setFieldValue('skus', nextSkus);
+                                  const total = nextSkus.reduce((sum, item) => sum + item.stock, 0);
+                                  formik.setFieldValue('stock', String(total));
+                                }}
+                              >
+                                <Delete />
+                              </IconButton>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -545,7 +597,10 @@ export default function NewProductPage() {
 
             {/* Images */}
             <Card sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={700} mb={3}>Foto Produk</Typography>
+              <Typography variant="h6" fontWeight={700}>Foto Produk</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                * Gambar pertama akan digunakan sebagai gambar utama (cover) produk. Gunakan tombol panah pada gambar untuk mengatur urutan.
+              </Typography>
               <Box
                 onClick={() => fileInputRef.current?.click()}
                 sx={{ border: '2px dashed #D1D5DB', borderRadius: 3, p: 4, textAlign: 'center', cursor: 'pointer', '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(108,99,255,0.04)' } }}>
@@ -557,12 +612,35 @@ export default function NewProductPage() {
               {(formik.values.images.length > 0 || uploadingProductImages) && (
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 2 }}>
                   {formik.values.images.map((img, i) => (
-                    <Box key={i} sx={{ position: 'relative' }}>
-                      <Avatar src={img} variant="rounded" sx={{ width: 80, height: 80 }} />
+                    <Box key={i} sx={{ position: 'relative', '&:hover .image-actions': { opacity: 1 } }}>
+                      <Avatar src={img} variant="rounded" sx={{ width: 80, height: 80, border: i === 0 ? '2px solid #6c63ff' : '1px solid #E5E7EB' }} />
+                      
+                      {/* Main Image Badge */}
+                      {i === 0 && (
+                        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, bgcolor: 'rgba(108,99,255,0.85)', color: 'white', py: 0.25, textAlign: 'center', borderRadius: '0 0 4px 4px', zIndex: 2 }}>
+                          <Typography variant="caption" sx={{ fontSize: 9, fontWeight: 700 }}>UTAMA</Typography>
+                        </Box>
+                      )}
+
+                      {/* Delete Button */}
                       <IconButton size="small" onClick={() => removeImage(i)}
-                        sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: 'white', width: 20, height: 20, '&:hover': { bgcolor: 'error.dark' } }}>
+                        sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: 'white', width: 20, height: 20, '&:hover': { bgcolor: 'error.dark' }, zIndex: 3 }}>
                         <Delete sx={{ fontSize: 12 }} />
                       </IconButton>
+
+                      {/* Reorder Overlay */}
+                      <Box className="image-actions" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.4)', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, opacity: 0, transition: 'opacity 0.2s', zIndex: 1 }}>
+                        {i > 0 && (
+                          <IconButton size="small" onClick={() => moveImage(i, 'left')} sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.4)' }, p: 0.5 }}>
+                            <ArrowBack sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        )}
+                        {i < formik.values.images.length - 1 && (
+                          <IconButton size="small" onClick={() => moveImage(i, 'right')} sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.4)' }, p: 0.5 }}>
+                            <ArrowForward sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        )}
+                      </Box>
                     </Box>
                   ))}
                   {uploadingProductImages && (
