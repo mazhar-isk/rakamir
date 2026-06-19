@@ -57,7 +57,7 @@ async function handleProxy(request: NextRequest) {
 
     // Forward the body for POST/PUT/PATCH
     if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
-      options.body = await request.text();
+      options.body = await request.arrayBuffer();
     }
 
     // Hit the backend

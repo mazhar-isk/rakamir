@@ -1,20 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  Box, Container, Typography, Card, Grid, TextField,
-  Button, Avatar, Divider, List, ListItem, ListItemButton,
-  ListItemIcon, ListItemText, Chip,
-} from '@mui/material';
-import { Person, LocationOn, ShoppingBag, Logout, Edit, Save } from '@mui/icons-material';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiPut } from '@ecommerce/api-client';
-import { toast } from 'react-toastify';
-import StorefrontLayout from '@/components/layout/StorefrontLayout';
+import { Edit, LocationOn, Logout, Person, Save, ShoppingBag } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Container,
+  Divider,
+  Grid,
+  List, ListItem, ListItemButton,
+  ListItemIcon, ListItemText,
+  TextField,
+  Typography
+} from '@mui/material';
+import { useFormik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
 
 const menuItems = [
   { label: 'Profil Saya', icon: <Person />, href: '/account/profile', active: true },
@@ -35,7 +43,7 @@ export default function ProfilePage() {
 
   const formik = useFormik({
     enableReinitialize: true,
-    initialValues: { name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' },
+    initialValues: { name: user?.full_name ?? '', email: user?.email ?? '-', phone: user?.phone_number ?? '' },
     validationSchema: profileSchema,
     onSubmit: async (values) => {
       try {
@@ -57,9 +65,9 @@ export default function ProfilePage() {
           <Grid item xs={12} md={3}>
             <Card sx={{ p: 3, textAlign: 'center', mb: 2 }}>
               <Avatar sx={{ width: 72, height: 72, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '1.8rem' }}>
-                {user?.name?.[0]?.toUpperCase() ?? 'U'}
+                {user?.full_name?.[0]?.toUpperCase() ?? 'U'}
               </Avatar>
-              <Typography fontWeight={700}>{user?.name}</Typography>
+              <Typography fontWeight={700}>{user?.full_name}</Typography>
               <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
             </Card>
             <Card>

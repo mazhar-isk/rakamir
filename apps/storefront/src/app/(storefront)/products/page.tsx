@@ -3,28 +3,62 @@
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import ProductCard from '@/components/product/ProductCard';
 import { PaginatedResponse, Product, useGet } from '@ecommerce/api-client';
+import { useIntersection } from '@/hooks/useIntersection';
 import { Search } from '@mui/icons-material';
-import { Box, Container, FormControl, Grid, InputAdornment, InputLabel, MenuItem, Pagination, Select, Skeleton, TextField, Typography } from '@mui/material';
+import { Box, Container, FormControl, Grid, InputAdornment, InputLabel, MenuItem, Select, Skeleton, TextField, Typography } from '@mui/material';
 import { useSearchParams } from 'next/navigation';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 
 function ProductsContent() {
   const searchParams = useSearchParams();
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState(searchParams.get('sort') || 'newest');
-  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [search, setSearch] = useState(searchParams.get('search') || searchParams.get('q') || '');
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [hasMore, setHasMore] = useState(true);
 
   const queryString = new URLSearchParams({
     page: String(page),
     sort,
-    ...(search && { q: search }),
+    ...(search && { search: search }),
     ...(searchParams.get('category') && { category: searchParams.get('category')! }),
     ...(searchParams.get('filter') && { filter: searchParams.get('filter')! }),
     per_page: '12',
   }).toString();
 
   const { data, isLoading } = useGet<PaginatedResponse<Product>>(`/products?${queryString}`);
-  const products = data?.data ?? [];
+
+  const [loadMoreRef, isLoadMoreVisible] = useIntersection({ once: false, rootMargin: '100px' });
+
+  // Reset products list and page when filters/search changes
+  useEffect(() => {
+    setPage(1);
+    setProducts([]);
+  }, [sort, search, searchParams]);
+
+  // Append items when data changes
+  useEffect(() => {
+    if (data?.data) {
+      if (page === 1) {
+        setProducts(data.data);
+      } else {
+        setProducts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newProducts = data.data.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newProducts];
+        });
+      }
+      setHasMore(page < data.meta.last_page);
+    }
+  }, [data, page]);
+
+  // Load next page when sentinel is visible
+  useEffect(() => {
+    if (isLoadMoreVisible && hasMore && !isLoading) {
+      setPage((prev) => prev + 1);
+    }
+  }, [isLoadMoreVisible, hasMore, isLoading]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -56,23 +90,37 @@ function ProductsContent() {
       </Box>
 
       {/* Products Grid */}
-      <Grid container spacing={3}>
-        {isLoading
-          ? Array.from({ length: 12 }).map((_, i) => (
-            <Grid item xs={6} sm={4} md={3} key={"skeleton-" + i}><Skeleton variant="rounded" height={310} /></Grid>
-          ))
-          : products.map((p, i) => (
-            <Grid item xs={6} sm={4} md={3} key={"product-" + p.id + i}>
-              <ProductCard product={p} index={i} />
-            </Grid>
+      {products.length === 0 && isLoading ? (
+        <Grid container spacing={3}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <Grid item xs={6} sm={4} md={3} key={"skeleton-initial-" + i}><Skeleton variant="rounded" height={310} /></Grid>
           ))}
-      </Grid>
-
-      {/* Pagination */}
-      {data && data.meta.last_page > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-          <Pagination count={data.meta.last_page} page={page} onChange={(_, v) => setPage(v)} color="primary" shape="rounded" />
+        </Grid>
+      ) : products.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 12, bgcolor: '#FAF8F6', borderRadius: 4, border: '1px dashed rgba(235,196,184,0.4)', maxWidth: 600, mx: 'auto', mt: 4 }}>
+          <Typography fontSize={48} mb={2}>🔍</Typography>
+          <Typography variant="h6" fontWeight={700} mb={1}>Produk Tidak Ditemukan</Typography>
+          <Typography color="text.secondary">Maaf, kami tidak menemukan produk yang cocok dengan pencarian atau filter Anda.</Typography>
         </Box>
+      ) : (
+        <>
+          <Grid container spacing={3}>
+            {products.map((p, i) => (
+              <Grid item xs={6} sm={4} md={3} key={"product-" + p.id + i}>
+                <ProductCard product={p} index={i} />
+              </Grid>
+            ))}
+            {isLoading && Array.from({ length: 4 }).map((_, i) => (
+              <Grid item xs={6} sm={4} md={3} key={"skeleton-more-" + i}><Skeleton variant="rounded" height={310} /></Grid>
+            ))}
+          </Grid>
+
+          {hasMore && (
+            <Box ref={loadMoreRef} sx={{ display: 'flex', justifyContent: 'center', py: 4, mt: 2, minHeight: '20px' }}>
+              {isLoading && <Skeleton variant="rounded" height={40} width={200} />}
+            </Box>
+          )}
+        </>
       )}
     </Container>
   );

@@ -6,19 +6,93 @@ import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { Product, ProductVariant, useGet } from '@ecommerce/api-client';
 import { formatCurrency } from '@ecommerce/utils';
-import { Add, Favorite, FavoriteBorder, LocalShipping, Remove, Share, Shield, ShoppingCart, SwapHoriz } from '@mui/icons-material';
+import { Add, LocalShipping, Remove, Shield, ShoppingCart, SwapHoriz } from '@mui/icons-material';
 import { Box, Button, Chip, Container, Divider, Grid, IconButton, Rating, Skeleton, Tab, Tabs, Typography } from '@mui/material';
+import chroma from 'chroma-js';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+
+const getColorCode = (colorName: string): string => {
+  const clean = colorName.trim().toLowerCase();
+  const indonesianColors: Record<string, string> = {
+    merah: 'red',
+    biru: 'blue',
+    hijau: 'green',
+    kuning: 'yellow',
+    hitam: '#1f2937',
+    putih: '#ffffff',
+    abu: '#9ca3af',
+    'abu-abu': '#9ca3af',
+    cokelat: '#8c6239',
+    coklat: '#8c6239',
+    ungu: 'purple',
+    oranye: 'orange',
+    jingga: 'orange',
+    pink: 'pink',
+    'merah muda': 'pink',
+    emas: '#d4af37',
+    perak: '#c0c0c0',
+    tembaga: '#b87333',
+    tosca: '#30d5c8',
+    mocca: '#a38068',
+    moka: '#a38068',
+    cream: '#fffdd0',
+    krim: '#fffdd0',
+    mustard: '#e1ad01',
+    navy: '#000080',
+    maroon: '#800000',
+    peach: '#ffe5b4',
+    khaki: '#f0e68c',
+    denim: '#1560bd',
+  };
+
+  if (indonesianColors[clean]) {
+    return indonesianColors[clean];
+  }
+
+  const parts = clean.split(/\s+/);
+  if (parts.length > 1) {
+    const baseColor = parts[0];
+    const modifier = parts[1];
+    const baseEng = indonesianColors[baseColor] || baseColor;
+
+    if (baseEng.startsWith('#')) {
+      return baseEng;
+    }
+
+    if (modifier === 'tua') {
+      if (baseEng === 'purple') return 'indigo';
+      return `dark${baseEng}`;
+    }
+    if (modifier === 'muda') {
+      if (baseEng === 'red') return 'lightcoral';
+      if (baseEng === 'purple') return 'violet';
+      return `light${baseEng}`;
+    }
+  }
+
+  if (chroma.valid(clean)) {
+    return clean;
+  }
+
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash % 360);
+  const s = 45 + Math.abs((hash >> 8) % 25);
+  const l = 40 + Math.abs((hash >> 16) % 20);
+  return `hsl(${h}, ${s}%, ${l}%)`;
+};
 
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   const { data: product, isLoading } = useGet<Product>(`/products/${params.slug}`);
   const { addItem } = useCart();
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const { favoriteIds, toggleFavorite } = useWishlist();
   const router = useRouter();
   const [qty, setQty] = useState(1);
@@ -31,7 +105,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
     if (!product) return;
     if (!isAuthenticated) {
       toast.info('Silakan login terlebih dahulu untuk menyimpan ke favorit.');
-      router.push(`/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      openAuthModal(window.location.pathname);
       return;
     }
     toggleFavorite(product.id, product.name);
@@ -45,7 +119,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
       const initial: Record<string, string> = {};
       product.options.forEach((opt) => {
         if (opt.values && opt.values.length > 0) {
-          initial[opt.id] = opt.values[0].id;
+          initial[opt.option_id] = opt.values[0].option_value_id;
         }
       });
       setSelectedOptions(initial);
@@ -108,9 +182,12 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
     const testSelection = { ...selectedOptions, [optionId]: valueId };
     return !product.skus.some((sku) => {
       if (!sku.option_values_map) return false;
-      return Object.entries(testSelection).every(([oId, vId]) => {
-        return sku.option_values_map[oId] === vId;
-      });
+      return (
+        sku.stock > 0 &&
+        Object.entries(testSelection).every(([oId, vId]) => {
+          return sku.option_values_map[oId] === vId;
+        })
+      );
     });
   };
 
@@ -138,7 +215,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
       const next = { ...prev, [optionId]: valueId };
       if (product.skus) {
         // Check if the new combination matches a SKU
-        const sku = product.skus.find((s) => 
+        const sku = product.skus.find((s) =>
           Object.entries(next).every(([oId, vId]) => s.option_values_map?.[oId] === vId)
         );
         if (sku) {
@@ -165,23 +242,23 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
     // Require login before adding to cart
     if (!isAuthenticated) {
       toast.info('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.');
-      router.push(`/auth/login?returnUrl=/products/${params.slug}`);
+      openAuthModal(`/products/${params.slug}`);
       return;
     }
 
     if (product) {
       let variant: ProductVariant | undefined = undefined;
-      
+
       if (product.options && product.options.length > 0 && activeSku) {
         // Build readable variant option text (e.g. "Color: Blue, Size: S")
         const nameParts = product.options.map((opt) => {
-          const valId = selectedOptions[opt.id];
-          const valObj = opt.values?.find((v) => v.id === valId);
+          const valId = selectedOptions[opt.option_id];
+          const valObj = opt.values?.find((v) => v.option_value_id === valId);
           return valObj ? valObj.value : '';
         }).filter(Boolean);
 
         variant = {
-          id: activeSku.id,
+          id: activeSku.sku_id,
           name: nameParts.join(', '),
           value: activeSku.sku,
           price_modifier: activeSku.price - product.price,
@@ -242,14 +319,14 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                     <Chip key={c.id} label={c.name} variant="outlined" size="small" sx={{ borderColor: 'primary.light', color: 'primary.main', fontWeight: 600 }} />
                   ))
                 ) : (
-                  <Chip label={product.category.name} variant="outlined" size="small" />
+                  <Chip label={product?.category?.name} variant="outlined" size="small" />
                 )}
               </Box>
               <Typography variant="h4" fontWeight={700} mb={1}>{product.name}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                 <Rating value={product.rating} precision={0.5} size="small" readOnly />
                 <Typography variant="body2" color="text.secondary">({product.review_count} ulasan) · {product.sold_count} terjual</Typography>
-              </Box>
+              </Box> */}
 
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
                 <Typography variant="h3" fontWeight={800} color="primary.main">{formatCurrency(currentPrice)}</Typography>
@@ -264,34 +341,24 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
               {/* Dynamic Option Selectors */}
               {product.options && product.options.map((opt) => (
-                <Box key={opt.id} sx={{ mb: 3 }}>
+                <Box key={opt.option_id} sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, textTransform: 'uppercase', letterSpacing: 1, fontSize: 11, color: 'text.secondary' }}>
-                    {opt.name}: <Box component="span" sx={{ color: 'text.primary', fontWeight: 800 }}>{opt.values?.find(v => v.id === selectedOptions[opt.id])?.value}</Box>
+                    {opt.name}: <Box component="span" sx={{ color: 'text.primary', fontWeight: 800 }}>{opt.values?.find(v => v.option_value_id === selectedOptions[opt.option_id])?.value}</Box>
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                     {opt.values?.map((val) => {
-                      const isSelected = selectedOptions[opt.id] === val.id;
-                      const isDisabled = isOptionValueDisabled(opt.id, val.id);
+                      const isSelected = selectedOptions[opt.option_id] === val.option_value_id;
+                      const isDisabled = isOptionValueDisabled(opt.option_id, val.option_value_id);
                       const isColor = opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'warna';
-                      
+
                       if (isColor) {
-                        const colorHexMap: Record<string, string> = {
-                          black: '#1f2937',
-                          blue: '#3b82f6',
-                          red: '#ef4444',
-                          green: '#10b981',
-                          white: '#ffffff',
-                          gray: '#9ca3af',
-                          silver: '#e5e7eb',
-                          gold: '#f59e0b',
-                          orange: '#f97316',
-                        };
-                        const hex = colorHexMap[val.value.toLowerCase()] || '#cccccc';
-                        
+                        const hex = getColorCode(val.value);
+                        const isLight = chroma.valid(hex) ? chroma(hex).luminance() > 0.5 : false;
+
                         return (
                           <Box
-                            key={val.id}
-                            onClick={() => handleOptionChange(opt.id, val.id)}
+                            key={val.option_value_id}
+                            onClick={() => handleOptionChange(opt.option_id, val.option_value_id)}
                             sx={{
                               width: 38,
                               height: 38,
@@ -311,20 +378,20 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                               }
                             }}
                           >
-                            {val.value.toLowerCase() === 'white' && isSelected && (
+                            {isLight && isSelected && (
                               <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#000000' }} />
                             )}
-                            {val.value.toLowerCase() !== 'white' && isSelected && (
+                            {!isLight && isSelected && (
                               <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ffffff' }} />
                             )}
                           </Box>
                         );
                       }
-                      
+
                       return (
                         <Box
-                          key={val.id}
-                          onClick={() => handleOptionChange(opt.id, val.id)}
+                          key={val.option_value_id}
+                          onClick={() => handleOptionChange(opt.option_id, val.option_value_id)}
                           sx={{
                             px: 3,
                             py: 1,
@@ -371,9 +438,9 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   sx={{ py: 1.5 }}>
                   {currentStock === 0 ? 'Stok Varian Habis' : 'Tambah ke Keranjang'}
                 </Button>
-                <IconButton sx={{ border: '1px solid rgba(235,196,184,0.4)', borderRadius: 2, color: isFavorite ? '#D26B54' : 'text.secondary', '&:hover': { borderColor: '#D26B54', color: '#D26B54' }, transition: 'all 0.2s' }} onClick={handleToggleFavorite}>
+                {/* <IconButton sx={{ border: '1px solid rgba(235,196,184,0.4)', borderRadius: 2, color: isFavorite ? '#D26B54' : 'text.secondary', '&:hover': { borderColor: '#D26B54', color: '#D26B54' }, transition: 'all 0.2s' }} onClick={handleToggleFavorite}>
                   {isFavorite ? <Favorite sx={{ color: 'primary.main' }} /> : <FavoriteBorder />}
-                </IconButton>
+                </IconButton> */}
               </Box>
 
               {/* Guarantees */}
@@ -395,7 +462,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
         <Box sx={{ mt: 8 }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: '1px solid rgba(235,196,184,0.3)', mb: 4 }}>
             <Tab label="Deskripsi" />
-            <Tab label="Ulasan" />
+            {/* <Tab label="Ulasan" /> */}
           </Tabs>
           {tab === 0 && (
             <Typography color="text.secondary" sx={{ lineHeight: 1.9, whiteSpace: 'pre-line' }}>

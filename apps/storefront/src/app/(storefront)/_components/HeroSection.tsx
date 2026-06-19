@@ -96,7 +96,7 @@ export default function HeroSection() {
                     fontWeight: 800,
                     letterSpacing: '-0.03em',
                     color: '#2E2A27',
-                    fontFamily: '"Outfit", "Inter", sans-serif',
+                    fontFamily: '"Playfair Display", serif',
                     mb: 3
                   }}
                 >
@@ -266,7 +266,7 @@ export default function HeroSection() {
                     }}
                   >
                     <Image
-                      src="/assets/images/hero_product.png"
+                      src="https://cdn.rakamir.com/gallery/WhatsApp%20Image%202026-06-13%20at%2010.53.47%20(1).jpeg"
                       alt="Rakamir Premium Leather Bag Featured"
                       fill
                       priority

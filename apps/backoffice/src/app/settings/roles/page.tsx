@@ -1,6 +1,7 @@
 'use client';
 
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
+import { useConfirm } from '@/contexts/ConfirmContext';
 import { apiDelete, apiPost, apiPut, Role, useGet } from '@ecommerce/api-client';
 import { Permission, ROLE_PERMISSIONS } from '@ecommerce/utils';
 import { Add, CheckCircle, Delete, Edit } from '@mui/icons-material';
@@ -16,6 +17,7 @@ import {
   DialogTitle,
   Grid,
   IconButton,
+  Skeleton,
   TextField,
   Tooltip,
   Typography,
@@ -23,7 +25,6 @@ import {
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useSWRConfig } from 'swr';
-import { useConfirm } from '@/contexts/ConfirmContext';
 
 const ALL_PERMISSIONS: { key: Permission; label: string; group: string }[] = [
   { key: 'products:read', label: 'Lihat Produk', group: 'Produk' },
@@ -111,8 +112,8 @@ export default function RolesPage() {
   };
 
   // Use mock roles if API not available
-  const displayRoles = roles ?? Object.entries(ROLE_PERMISSIONS).map(([slug, perms], i) => ({
-    id: String(i), name: slug.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()), slug, permissions: perms,
+  const displayRoles: Role[] = roles ?? Object.entries(ROLE_PERMISSIONS).map(([scope, perms], i) => ({
+    id: String(i), name: scope.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()), login_scope: scope, permissions: perms,
   }));
 
   const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
@@ -130,49 +131,73 @@ export default function RolesPage() {
       </Box>
 
       <Grid container spacing={3}>
-        {displayRoles.map((role) => {
-          const color = ROLE_COLORS[role.slug] ?? '#6B7280';
-          return (
-            <Grid item xs={12} md={6} key={role.id}>
-              <Card sx={{ p: 3, borderTop: `4px solid ${color}` }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ bgcolor: `${color}20`, color, width: 40, height: 40, fontSize: '1.1rem' }}>
-                      {role.name[0]}
-                    </Avatar>
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Grid item xs={12} md={6} key={i}>
+              <Card sx={{ p: 3, borderRadius: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Skeleton variant="circular" width={40} height={40} animation="wave" />
+                  <Box sx={{ flex: 1 }}>
+                    <Skeleton variant="text" width="60%" height={24} animation="wave" />
+                    <Skeleton variant="text" width="30%" height={16} animation="wave" />
+                  </Box>
+                </Box>
+                <Skeleton variant="text" width="80%" height={20} animation="wave" sx={{ mb: 1 }} />
+                <Skeleton variant="text" width="50%" height={20} animation="wave" />
+              </Card>
+            </Grid>
+          ))
+        ) : displayRoles.length === 0 ? (
+          <Grid item xs={12}>
+            <Box sx={{ py: 8, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 3, border: '1px dashed rgba(235,196,184,0.4)' }}>
+              <Typography color="text.secondary" fontWeight={500}>Belum ada data role.</Typography>
+            </Box>
+          </Grid>
+        ) : (
+          displayRoles.map((role) => {
+            const color = ROLE_COLORS[role.login_scope] ?? '#6B7280';
+            return (
+              <Grid item xs={12} md={6} key={role.id}>
+                <Card sx={{ p: 3, borderTop: `4px solid ${color}` }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Avatar sx={{ bgcolor: `${color}20`, color, width: 40, height: 40, fontSize: '1.1rem' }}>
+                        {role.name[0]}
+                      </Avatar>
+                      <Box>
+                        <Typography fontWeight={700}>{role.name}</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{role.login_scope}</Typography>
+                      </Box>
+                    </Box>
                     <Box>
-                      <Typography fontWeight={700}>{role.name}</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{role.slug}</Typography>
+                      <Tooltip title="Edit"><IconButton size="small" color="primary" onClick={() => openEdit(role as Role)}><Edit fontSize="small" /></IconButton></Tooltip>
+                      <Tooltip title="Hapus"><IconButton size="small" color="error" onClick={() => handleDelete(role.id)} disabled={role.login_scope === 'superadmin'}><Delete fontSize="small" /></IconButton></Tooltip>
                     </Box>
                   </Box>
                   <Box>
-                    <Tooltip title="Edit"><IconButton size="small" color="primary" onClick={() => openEdit(role as Role)}><Edit fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Hapus"><IconButton size="small" color="error" onClick={() => handleDelete(role.id)} disabled={role.slug === 'superadmin'}><Delete fontSize="small" /></IconButton></Tooltip>
-                  </Box>
-                </Box>
-                <Box>
-                  {groups.map((group) => {
-                    const groupPerms = ALL_PERMISSIONS.filter((p) => p.group === group);
-                    const hasAny = groupPerms.some((p) => role.permissions.includes(p.key));
-                    if (!hasAny) return null;
-                    return (
-                      <Box key={group} sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={0.5}>{group}</Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {groupPerms.map((p) => role.permissions.includes(p.key) && (
-                            <Chip key={p.key} label={p.label} size="small"
-                              icon={<CheckCircle sx={{ fontSize: '14px !important', color: `${color} !important` }} />}
-                              sx={{ bgcolor: `${color}10`, color, fontSize: '0.7rem', height: 22 }} />
-                          ))}
+                    {groups.map((group) => {
+                      const groupPerms = ALL_PERMISSIONS.filter((p) => p.group === group);
+                      const hasAny = groupPerms.some((p) => (role.permissions || []).includes(p.key));
+                      if (!hasAny) return null;
+                      return (
+                        <Box key={group} sx={{ mb: 1.5 }}>
+                          <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={0.5}>{group}</Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {groupPerms.map((p) => (role.permissions || []).includes(p.key) && (
+                              <Chip key={p.key} label={p.label} size="small"
+                                icon={<CheckCircle sx={{ fontSize: '14px !important', color: `${color} !important` }} />}
+                                sx={{ bgcolor: `${color}10`, color, fontSize: '0.7rem', height: 22 }} />
+                            ))}
+                          </Box>
                         </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </Card>
-            </Grid>
-          );
-        })}
+                      );
+                    })}
+                  </Box>
+                </Card>
+              </Grid>
+            );
+          })
+        )}
       </Grid>
 
       {/* Create / Edit role dialog */}

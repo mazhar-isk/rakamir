@@ -70,7 +70,7 @@ export default function NewsletterSection() {
               fontWeight={700} 
               sx={{ 
                 color: '#2E2A27', 
-                fontFamily: '"Outfit", "Inter", sans-serif',
+                fontFamily: '"Playfair Display", serif',
                 letterSpacing: '-0.02em',
                 mb: 2.5 
               }}

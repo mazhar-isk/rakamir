@@ -1,14 +1,12 @@
 'use client';
 
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { Notifications, Search } from '@mui/icons-material';
-import { AppBar, Avatar, Badge, Box, Divider, IconButton, Menu, MenuItem, Toolbar, Typography } from '@mui/material';
-import { usePathname } from 'next/navigation';
-import { ReactNode, useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, InputAdornment, TextField, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { Inventory2, ShoppingCart, People } from '@mui/icons-material';
-import Sidebar from './Sidebar';
+import { Inventory2, People, Search, ShoppingCart } from '@mui/icons-material';
+import { AppBar, Avatar, Box, Dialog, DialogContent, Divider, IconButton, InputAdornment, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, TextField, Toolbar, Typography } from '@mui/material';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import Sidebar from './Sidebar';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -62,12 +60,12 @@ export default function BackofficeLayout({ children }: { children: ReactNode }) 
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Typography variant="h6" fontWeight={700}>{title}</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton size="small" onClick={() => setIsSearchOpen(true)}>
+              {/* <IconButton size="small" onClick={() => setIsSearchOpen(true)}>
                 <Search />
-              </IconButton>
-              <IconButton size="small" onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
+              </IconButton> */}
+              {/* <IconButton size="small" onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
                 <Badge badgeContent={3} color="error"><Notifications /></Badge>
-              </IconButton>
+              </IconButton> */}
               <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ p: 0.5 }}>
                 <Avatar sx={{ width: 34, height: 34, bgcolor: '#D26B54', fontSize: '0.875rem' }}>
                   {admin?.name?.[0]?.toUpperCase()}

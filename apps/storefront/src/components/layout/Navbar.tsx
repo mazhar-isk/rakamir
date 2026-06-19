@@ -9,8 +9,7 @@ import {
   Menu as MenuIcon,
   PersonOutline,
   Search,
-  ShoppingCartOutlined,
-  FavoriteBorder
+  ShoppingCartOutlined
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -30,8 +29,31 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from 'react';
+
+function QueryParamsAuthHandler() {
+  const { openAuthModal } = useAuth();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const showAuth = searchParams.get('showAuth');
+    const returnUrl = searchParams.get('returnUrl');
+    if (showAuth === 'login' || showAuth === 'register') {
+      openAuthModal(returnUrl || undefined);
+
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.delete('showAuth');
+      newParams.delete('returnUrl');
+      const search = newParams.toString();
+      const queryStr = search ? `?${search}` : '';
+      window.history.replaceState(null, '', `${window.location.pathname}${queryStr}`);
+    }
+  }, [searchParams, openAuthModal]);
+
+  return null;
+}
+
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -48,11 +70,11 @@ function HideOnScroll({ children }: { children: React.ReactElement }) {
 export default function Navbar() {
   const { itemCount } = useCart();
   const { favoriteIds } = useWishlist();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
-  
+
   const isScrolled = useScrollTrigger({
     disableHysteresis: true,
     threshold: 10,
@@ -64,7 +86,7 @@ export default function Navbar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
+    if (searchQuery.trim()) router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
   };
 
   return (
@@ -132,12 +154,12 @@ export default function Navbar() {
 
             {/* Right icons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton component={Link} href="/account/wishlist" sx={{ color: 'text.primary' }}>
+              {/* <IconButton component={Link} href="/account/wishlist" sx={{ color: 'text.primary' }}>
                 <Badge badgeContent={favoriteIds.length} color="primary">
                   <FavoriteBorder />
                 </Badge>
-              </IconButton>
-              
+              </IconButton> */}
+
               <IconButton component={Link} href="/cart" sx={{ color: 'text.primary' }}>
                 <Badge badgeContent={itemCount} color="primary">
                   <ShoppingCartOutlined />
@@ -148,7 +170,7 @@ export default function Navbar() {
                 <>
                   <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ p: 0.5 }}>
                     <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.875rem' }}>
-                      {user?.name?.[0]?.toUpperCase()}
+                      {user?.full_name?.[0]?.toUpperCase()}
                     </Avatar>
                     <KeyboardArrowDown sx={{ fontSize: 16, color: 'text.secondary' }} />
                   </IconButton>
@@ -162,7 +184,7 @@ export default function Navbar() {
                   </Menu>
                 </>
               ) : (
-                <IconButton component={Link} href="/auth/login" sx={{ color: 'text.primary' }}>
+                <IconButton onClick={() => openAuthModal()} sx={{ color: 'text.primary' }}>
                   <PersonOutline />
                 </IconButton>
               )}
@@ -199,6 +221,10 @@ export default function Navbar() {
 
       {/* Spacer */}
       {!isHome && <Toolbar sx={{ mb: 1 }} />}
+
+      <Suspense fallback={null}>
+        <QueryParamsAuthHandler />
+      </Suspense>
     </>
   );
 }

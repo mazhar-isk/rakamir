@@ -1,21 +1,24 @@
 'use client';
 
-import React from 'react';
+import BackofficeLayout from '@/components/layout/BackofficeLayout';
+import { DashboardStats, useGet } from '@ecommerce/api-client';
+import { formatCurrency } from '@ecommerce/utils';
 import {
-  Box, Grid, Typography, Card, CardContent, Skeleton,
-} from '@mui/material';
-import {
-  TrendingUp, ShoppingBag, People, Inventory2,
-  ArrowUpward, ArrowDownward,
+  ArrowDownward,
+  ArrowUpward,
+  Inventory2,
+  People,
+  ShoppingBag,
+  TrendingUp,
 } from '@mui/icons-material';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell,
-} from 'recharts';
-import { useGet } from '@ecommerce/api-client';
-import { DashboardStats } from '@ecommerce/api-client';
-import { formatCurrency } from '@ecommerce/utils';
-import BackofficeLayout from '@/components/layout/BackofficeLayout';
+  Box,
+  Card, CardContent,
+  Grid,
+  Skeleton,
+  Typography,
+} from '@mui/material';
+import React from 'react';
 
 const MOCK_REVENUE = [
   { month: 'Jan', revenue: 42000000, orders: 312 },
@@ -87,21 +90,21 @@ export default function DashboardPage() {
     <BackofficeLayout>
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.5}>Selamat datang kembali! 👋</Typography>
-        <Typography variant="body2" color="text.secondary" mb={4}>Berikut ringkasan performa toko Anda hari ini.</Typography>
+        {/* <Typography variant="body2" color="text.secondary" mb={4}>Berikut ringkasan performa toko Anda hari ini.</Typography> */}
 
         {/* Stat cards */}
-        <Grid container spacing={3} mb={4}>
+        {/* <Grid container spacing={3} mb={4}>
           {statCards.map((card) => (
             <Grid item xs={12} sm={6} lg={3} key={card.title}>
               <StatCard {...card} loading={isLoading} />
             </Grid>
           ))}
-        </Grid>
+        </Grid> */}
 
         {/* Charts row */}
         <Grid container spacing={3} mb={4}>
           {/* Revenue line chart */}
-          <Grid item xs={12} lg={8}>
+          {/* <Grid item xs={12} lg={8}>
             <Card sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Pendapatan & Pesanan (7 Bulan Terakhir)</Typography>
               <ResponsiveContainer width="100%" height={280}>
@@ -117,10 +120,10 @@ export default function DashboardPage() {
                 </LineChart>
               </ResponsiveContainer>
             </Card>
-          </Grid>
+          </Grid> */}
 
           {/* Order status pie chart */}
-          <Grid item xs={12} lg={4}>
+          {/* <Grid item xs={12} lg={4}>
             <Card sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Status Pesanan</Typography>
               <ResponsiveContainer width="100%" height={220}>
@@ -143,13 +146,13 @@ export default function DashboardPage() {
                 ))}
               </Box>
             </Card>
-          </Grid>
+          </Grid> */}
         </Grid>
 
         {/* Bottom row */}
         <Grid container spacing={3}>
           {/* Monthly bar chart */}
-          <Grid item xs={12} md={7}>
+          {/* <Grid item xs={12} md={7}>
             <Card sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Perbandingan Pendapatan Bulanan</Typography>
               <ResponsiveContainer width="100%" height={240}>
@@ -162,10 +165,10 @@ export default function DashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             </Card>
-          </Grid>
+          </Grid> */}
 
           {/* Top products */}
-          <Grid item xs={12} md={5}>
+          {/* <Grid item xs={12} md={5}>
             <Card sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Produk Terlaris</Typography>
               {TOP_PRODUCTS.map((p, i) => (
@@ -181,7 +184,7 @@ export default function DashboardPage() {
                 </Box>
               ))}
             </Card>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
     </BackofficeLayout>

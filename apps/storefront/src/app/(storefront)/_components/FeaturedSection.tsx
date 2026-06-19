@@ -2,15 +2,20 @@
 
 import ProductCard from '@/components/product/ProductCard';
 import { PaginatedResponse, Product, useGet } from '@ecommerce/api-client';
+import { useIntersection } from '@/hooks/useIntersection';
 import { AutoAwesome } from '@mui/icons-material';
 import { Box, Container, Grid, Skeleton, Typography } from '@mui/material';
 
 export default function FeaturedSection() {
-  const { data, isLoading } = useGet<PaginatedResponse<Product>>('/products?is_featured=true&per_page=4');
+  const [ref, isIntersecting] = useIntersection();
+  const { data, isLoading: apiLoading } = useGet<PaginatedResponse<Product>>(
+    isIntersecting ? '/products?is_featured=true&per_page=4' : null
+  );
   const products = data?.data ?? [];
+  const isLoading = apiLoading || !isIntersecting;
 
   return (
-    <Box sx={{ py: 10, bgcolor: '#FFFFFF' }}>
+    <Box ref={ref} sx={{ py: 10, bgcolor: '#FFFFFF' }}>
       <Container maxWidth="lg">
         <Box sx={{ mb: 6, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -33,7 +38,7 @@ export default function FeaturedSection() {
             fontWeight={700}
             sx={{ 
               color: '#2E2A27', 
-              fontFamily: '"Outfit", "Inter", sans-serif',
+              fontFamily: '"Playfair Display", serif',
               letterSpacing: '-0.02em'
             }}
           >

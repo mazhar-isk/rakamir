@@ -1,7 +1,8 @@
 'use client';
 
+import { TableNoRowsOverlay } from '@/components/common/DataGridOverlays';
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { apiPatch, Order, usePaginated } from '@ecommerce/api-client';
+import { apiPatch, usePaginated } from '@ecommerce/api-client';
 import { formatCurrency, formatDate, getOrderStatusColor, getOrderStatusLabel, OrderStatus } from '@ecommerce/utils';
 import { Search, Visibility } from '@mui/icons-material';
 import {
@@ -17,10 +18,10 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
-const STATUS_OPTIONS: OrderStatus[] = ['pending', 'payment_pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+const STATUS_OPTIONS: OrderStatus[] = ['pending', 'payment_pending', 'waiting_confirmation', 'waiting_payment', 'paid', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded'];
 
 export default function OrdersPage() {
   const [page, setPage] = useState(0);
@@ -28,13 +29,21 @@ export default function OrdersPage() {
   const [status, setStatus] = useState('');
 
   const queryString = new URLSearchParams({
-    page: String(page + 1), per_page: '10',
-    ...(search && { q: search }),
-    ...(status && { status }),
+    page: String(page + 1),
+    limit: '10',
+    search: search,
+    status: status,
+    sort_by: 'created_at',
+    sort_dir: 'desc',
   }).toString();
 
-  const { data, isLoading, mutate } = usePaginated<Order>(`/admin/orders?${queryString}`);
-  const orders = data?.data ?? [];
+  const { data, isLoading, mutate } = usePaginated<any>(`/admin/transactions?${queryString}`);
+  const orders = useMemo(() => {
+    return (data?.data ?? []).map((o: any) => ({
+      ...o,
+      status: o.status?.toLowerCase(),
+    }));
+  }, [data?.data]);
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
@@ -47,10 +56,10 @@ export default function OrdersPage() {
   };
 
   const columns: GridColDef[] = [
-    { field: 'order_number', headerName: 'No. Pesanan', width: 150, display: 'flex', renderCell: (p) => <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>#{p.value}</Typography> },
+    { field: 'order_number', headerName: 'No. Pesanan', width: 150, display: 'flex', renderCell: (p) => <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>#{p.row.order_number ?? p.row.invoice_number ?? p.row.id?.slice(0, 8).toUpperCase()}</Typography> },
     {
       field: 'status', headerName: 'Status', width: 200,
-      renderCell: (p: GridRenderCellParams<Order>) => {
+      renderCell: (p: GridRenderCellParams<any>) => {
         const color = getOrderStatusColor(p.value as OrderStatus);
         return (
           <Select size="small" value={p.value} onClick={(e) => e.stopPropagation()}
@@ -63,13 +72,13 @@ export default function OrdersPage() {
     },
     { field: 'created_at', headerName: 'Tanggal', width: 140, renderCell: (p) => formatDate(p.value) },
     {
-      field: 'customer', headerName: 'Pelanggan', flex: 1, minWidth: 160, display: 'flex',
-      renderCell: (p: GridRenderCellParams<Order>) => <Typography variant="body2">{p.row.shipping_address?.recipient_name ?? '-'}</Typography>,
+      field: 'customer_name', headerName: 'Pelanggan', flex: 1, minWidth: 160, display: 'flex',
+      renderCell: (p: GridRenderCellParams<any>) => <Typography variant="body2">{p.value ?? '-'}</Typography>,
     },
-    { field: 'total', headerName: 'Total', width: 150, display: 'flex', renderCell: (p) => <Typography fontWeight={700} color="primary.main">{formatCurrency(p.value)}</Typography> },
+    { field: 'total', headerName: 'Total', width: 150, display: 'flex', renderCell: (p) => <Typography fontWeight={700} color="primary.main">{formatCurrency(p.row.total ?? p.row.grand_total ?? 0)}</Typography> },
     {
-      field: 'payment_status', headerName: 'Pembayaran', width: 130, display: 'flex',
-      renderCell: (p) => <Chip label={p.value === 'paid' ? 'Lunas' : 'Belum'} size="small" color={p.value === 'paid' ? 'success' : 'warning'} />,
+      field: 'is_paid', headerName: 'Pembayaran', width: 130, display: 'flex',
+      renderCell: (p) => <Chip label={p.value ? 'Lunas' : 'Belum'} size="small" color={p.value ? 'success' : 'warning'} />
     },
     {
       field: 'actions', headerName: 'Aksi', width: 80, sortable: false,
@@ -109,6 +118,14 @@ export default function OrdersPage() {
           rowCount={data?.meta.total ?? 0} paginationMode="server"
           paginationModel={{ page, pageSize: 10 }} onPaginationModelChange={(m) => setPage(m.page)}
           pageSizeOptions={[10]} rowHeight={60} disableRowSelectionOnClick
+          slots={{
+            noRowsOverlay: () => (
+              <TableNoRowsOverlay
+                message="Belum Ada Pesanan"
+                description="Belum ada transaksi pembelian atau pesanan yang terdaftar."
+              />
+            )
+          }}
           sx={{ border: 'none', minHeight: 400 }} />
       </Card>
     </BackofficeLayout>

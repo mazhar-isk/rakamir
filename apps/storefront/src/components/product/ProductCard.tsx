@@ -5,14 +5,13 @@ import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { Product } from '@ecommerce/api-client';
 import { formatCurrency } from '@ecommerce/utils';
-import { FavoriteBorder, ShoppingCartOutlined, Favorite, Close, Visibility } from '@mui/icons-material';
-import { Box, Card, CardContent, Chip, IconButton, Rating, Typography, Dialog, DialogContent, Grid, Button, Fade, Stack } from '@mui/material';
+import { Close, ShoppingCartOutlined, Visibility } from '@mui/icons-material';
+import { Box, Button, Card, CardContent, Chip, Dialog, DialogContent, Fade, Grid, IconButton, Rating, Stack, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { toast } from 'react-toastify';
 
 interface ProductCardProps {
   product: Product;
@@ -22,23 +21,25 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem } = useCart();
   const { favoriteIds, toggleFavorite } = useWishlist();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const router = useRouter();
   const isFavorite = favoriteIds.includes(product.id);
   const discountPct = product.discount_percentage;
   const mainImage = product.images?.[0] || '/placeholder-product.jpg';
 
+  const [imgSrc, setImgSrc] = useState(mainImage);
+  const [quickViewImgSrc, setQuickViewImgSrc] = useState(mainImage);
   const [isHovered, setIsHovered] = useState(false);
   const [openQuickView, setOpenQuickView] = useState(false);
+
+  React.useEffect(() => {
+    setImgSrc(mainImage);
+    setQuickViewImgSrc(mainImage);
+  }, [mainImage]);
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) {
-      toast.info('Silakan login terlebih dahulu untuk menyimpan ke favorit.');
-      router.push(`/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
     toggleFavorite(product.id, product.name);
   };
 
@@ -52,12 +53,10 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     addItem(product);
-    toast.success(`${product.name} ditambahkan ke keranjang!`);
   };
 
   const handleQuickViewAddToCart = () => {
     addItem(product);
-    toast.success(`${product.name} ditambahkan ke keranjang!`);
     setOpenQuickView(false);
   };
 
@@ -120,7 +119,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </Box>
 
           {/* Wishlist Icon */}
-          <IconButton
+          {/* <IconButton
             onClick={handleToggleFavorite}
             sx={{
               position: 'absolute',
@@ -142,7 +141,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             size="small"
           >
             {isFavorite ? <Favorite sx={{ fontSize: 18 }} /> : <FavoriteBorder sx={{ fontSize: 18 }} />}
-          </IconButton>
+          </IconButton> */}
 
           {/* Image Container with Hover Zoom */}
           <Link href={`/products/${product.slug}`} style={{ textDecoration: 'none' }}>
@@ -158,11 +157,13 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                 }}
               >
                 <Image
-                  src={mainImage}
+                  src={imgSrc}
                   alt={product.name}
                   fill
+                  loading="lazy"
                   style={{ objectFit: 'cover' }}
                   sizes="(max-width: 768px) 50vw, 25vw"
+                  onError={() => setImgSrc(`data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23FAF6F2"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%23D26B54">${encodeURIComponent(product.name)}</text></svg>`)}
                 />
               </Box>
 
@@ -240,7 +241,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                 mb: 0.5
               }}
             >
-              {product.category?.name || 'Kurasi Pilihan'}
+              {product.categories[0]?.name || 'Kurasi Pilihan'}
             </Typography>
 
             <Link href={`/products/${product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -265,12 +266,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             </Link>
 
             {/* Rating */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+            {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
               <Rating value={product.rating || 5} precision={0.5} size="small" readOnly sx={{ fontSize: '0.75rem', color: '#D26B54' }} />
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                 ({product.review_count || 0})
               </Typography>
-            </Box>
+            </Box> */}
 
             {/* Price Row */}
             <Box sx={{ mt: 'auto', display: 'flex', alignItems: 'baseline', gap: 1 }}>
@@ -332,11 +333,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <Grid item xs={12} md={6}>
               <Box sx={{ position: 'relative', height: { xs: 300, md: 450 }, bgcolor: '#FDFBF9' }}>
                 <Image
-                  src={mainImage}
+                  src={quickViewImgSrc}
                   alt={product.name}
                   fill
                   style={{ objectFit: 'cover' }}
                   sizes="(max-width: 960px) 100vw, 50vw"
+                  onError={() => setQuickViewImgSrc(`data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23FAF6F2"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%23D26B54">${encodeURIComponent(product.name)}</text></svg>`)}
                 />
               </Box>
             </Grid>
@@ -365,7 +367,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                   color: '#2E2A27',
                   lineHeight: 1.3,
                   mb: 2,
-                  fontFamily: '"Outfit", "Inter", sans-serif'
+                  fontFamily: '"Playfair Display", serif'
                 }}
               >
                 {product.name}

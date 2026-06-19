@@ -1,8 +1,17 @@
 'use client';
 
-import { Facebook, Instagram, Twitter, YouTube } from '@mui/icons-material';
+import { Instagram } from '@mui/icons-material';
 import { Box, Container, Divider, Grid, IconButton, Typography } from '@mui/material';
 import Link from 'next/link';
+import { TikTok } from '../atoms/Icons';
+
+const socialMedia = [
+  { icon: Instagram, href: 'https://www.instagram.com/rakamir__/', ariaLabel: 'Instagram' },
+  // { icon: YouTube, href: 'https://www.youtube.com/@rakamir', ariaLabel: 'YouTube' },
+  // { icon: Facebook, href: 'https://www.facebook.com/rakamir.id/', ariaLabel: 'Facebook' },
+  // { icon: Twitter, href: 'https://twitter.com/rakamir', ariaLabel: 'Twitter' },
+  { icon: TikTok, href: 'https://www.tiktok.com/@rakamirr.store', ariaLabel: 'TikTok' },
+];
 
 const footerLinks = {
   'Belanja': [
@@ -38,50 +47,55 @@ export default function Footer() {
         <Grid container spacing={5}>
           {/* Brand */}
           <Grid item xs={12} md={5} sx={{ pr: { md: 6 } }}>
-            <Typography 
-              variant="h5" 
-              fontWeight={800} 
-              sx={{ 
-                background: 'linear-gradient(135deg, #D26B54 0%, #EBC4B8 100%)', 
-                WebkitBackgroundClip: 'text', 
-                WebkitTextFillColor: 'transparent', 
+            <Typography
+              variant="h5"
+              fontWeight={800}
+              sx={{
+                background: 'linear-gradient(135deg, #D26B54 0%, #EBC4B8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
                 mb: 3,
-                fontFamily: '"Outfit", "Inter", sans-serif',
+                fontFamily: '"Playfair Display", serif',
                 letterSpacing: '-0.02em',
                 fontSize: '1.4rem'
               }}
             >
               Rakamir
             </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                lineHeight: 1.8, 
-                mb: 4, 
+            <Typography
+              variant="body2"
+              sx={{
+                lineHeight: 1.8,
+                mb: 4,
                 color: '#A2928C',
                 maxWidth: 380,
-                fontSize: '0.875rem' 
+                fontSize: '0.875rem'
               }}
             >
               Destinasi pilihan untuk koleksi tas wanita premium, produk kulit berkualitas tinggi, dan aksesoris fashion elegan yang menunjang gaya hidup modern Anda.
             </Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              {[Instagram, YouTube, Twitter, Facebook].map((Icon, i) => (
-                <IconButton 
-                  key={i} 
-                  sx={{ 
+              {socialMedia.map((socialMedia, i) => (
+                <IconButton
+                  key={i}
+                  sx={{
                     color: '#A2928C',
                     bgcolor: 'rgba(235,196,184,0.05)',
-                    '&:hover': { 
-                      color: '#FFFFFF', 
-                      bgcolor: '#D26B54' 
+                    '&:hover': {
+                      color: '#FFFFFF',
+                      bgcolor: '#D26B54'
                     },
                     transition: 'all 0.25s',
                     width: 36,
                     height: 36
                   }}
+                  component={Link}
+                  href={socialMedia.href}
+                  aria-label={socialMedia.ariaLabel}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <Icon sx={{ fontSize: 16 }} />
+                  <socialMedia.icon />
                 </IconButton>
               ))}
             </Box>
@@ -90,12 +104,12 @@ export default function Footer() {
           {/* Links */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <Grid item xs={6} sm={4} md={2.3} key={title}>
-              <Typography 
-                variant="subtitle2" 
-                fontWeight={700} 
-                gutterBottom 
-                sx={{ 
-                  mb: 3, 
+              <Typography
+                variant="subtitle2"
+                fontWeight={700}
+                gutterBottom
+                sx={{
+                  mb: 3,
                   color: '#FFFFFF',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
@@ -106,18 +120,18 @@ export default function Footer() {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
                 {links.map((link) => (
-                  <Link 
-                    key={link.label} 
-                    href={link.href} 
+                  <Link
+                    key={link.label}
+                    href={link.href}
                     style={{ textDecoration: 'none' }}
                   >
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
+                    <Typography
+                      variant="body2"
+                      sx={{
                         color: '#A2928C',
                         fontSize: '0.85rem',
                         transition: 'color 0.2s',
-                        '&:hover': { color: '#EBC4B8' } 
+                        '&:hover': { color: '#EBC4B8' }
                       }}
                     >
                       {link.label}
@@ -130,7 +144,7 @@ export default function Footer() {
         </Grid>
 
         <Divider sx={{ borderColor: 'rgba(235, 196, 184, 0.08)', my: 6 }} />
-        
+
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
           <Typography variant="caption" sx={{ color: '#82746E' }} suppressHydrationWarning>
             © {new Date().getFullYear()} Rakamir. Semua hak cipta dilindungi.

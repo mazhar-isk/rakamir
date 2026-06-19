@@ -39,7 +39,7 @@ export default function CategorySection() {
             fontWeight={700} 
             sx={{ 
               color: '#2E2A27', 
-              fontFamily: '"Outfit", "Inter", sans-serif',
+              fontFamily: '"Playfair Display", serif',
               letterSpacing: '-0.02em',
               mb: 2 
             }}
@@ -93,7 +93,7 @@ export default function CategorySection() {
                         fontWeight: 700, 
                         color: cat.text, 
                         opacity: 0.5,
-                        fontFamily: '"Outfit", sans-serif',
+                        fontFamily: '"Playfair Display", serif',
                         letterSpacing: '0.05em' 
                       }}
                     >
@@ -109,7 +109,7 @@ export default function CategorySection() {
                           color: '#2E2A27', 
                           lineHeight: 1.2,
                           fontSize: '1rem',
-                          fontFamily: '"Outfit", "Inter", sans-serif',
+                          fontFamily: '"Playfair Display", serif',
                           mb: 0.5
                         }}
                       >

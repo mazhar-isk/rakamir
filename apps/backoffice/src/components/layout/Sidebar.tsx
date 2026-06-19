@@ -2,7 +2,6 @@
 
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import {
-  BarChart,
   ChevronLeft, ChevronRight,
   Dashboard,
   ExpandLess, ExpandMore,
@@ -72,7 +71,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 
   // Reports — finance & superadmin only
-  { label: 'Laporan', icon: <BarChart />, href: '/reports', permission: 'reports:read' },
+  // { label: 'Laporan', icon: <BarChart />, href: '/reports', permission: 'reports:read' },
 
   // Settings — superadmin only
   {

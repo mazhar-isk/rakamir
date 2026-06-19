@@ -10,7 +10,10 @@ module.exports = {
         primary: { 500: '#6C63FF', 600: '#5a52e0' },
         sidebar: '#1A1A2E',
       },
-      fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+      fontFamily: {
+        sans: ['Playfair Display', 'ui-sans-serif', 'system-ui'],
+        serif: ['Playfair Display', 'serif'],
+      },
     },
   },
   plugins: [],

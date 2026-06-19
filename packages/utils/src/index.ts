@@ -9,7 +9,11 @@ export const formatCurrency = (amount: number, currency = 'IDR'): string => {
 
 // ---- Date ----
 export const formatDate = (date: string | Date, options?: Intl.DateTimeFormatOptions): string => {
+  if (!date) return "-";
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) {
+    return typeof date === 'string' ? date : "-";
+  }
   return new Intl.DateTimeFormat('id-ID', {
     day: 'numeric',
     month: 'long',
@@ -19,7 +23,11 @@ export const formatDate = (date: string | Date, options?: Intl.DateTimeFormatOpt
 };
 
 export const formatDateTime = (date: string | Date): string => {
+  if (!date) return "-";
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) {
+    return typeof date === 'string' ? date : "-";
+  }
   return new Intl.DateTimeFormat('id-ID', {
     day: 'numeric',
     month: 'short',
@@ -33,20 +41,26 @@ export const formatDateTime = (date: string | Date): string => {
 export type OrderStatus =
   | 'pending'
   | 'payment_pending'
+  | 'waiting_confirmation'
+  | 'waiting_payment'
   | 'paid'
   | 'processing'
   | 'shipped'
   | 'delivered'
+  | 'completed'
   | 'cancelled'
   | 'refunded';
 
 export const ORDER_STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
   pending: { label: 'Menunggu', color: '#f59e0b' },
   payment_pending: { label: 'Menunggu Pembayaran', color: '#f97316' },
+  waiting_confirmation: { label: 'Menunggu Konfirmasi', color: '#fbbf24' },
+  waiting_payment: { label: 'Menunggu Pembayaran', color: '#f97316' },
   paid: { label: 'Sudah Dibayar', color: '#3b82f6' },
   processing: { label: 'Diproses', color: '#8b5cf6' },
   shipped: { label: 'Dikirim', color: '#06b6d4' },
   delivered: { label: 'Terkirim', color: '#22c55e' },
+  completed: { label: 'Selesai', color: '#22c55e' },
   cancelled: { label: 'Dibatalkan', color: '#ef4444' },
   refunded: { label: 'Dikembalikan', color: '#6b7280' },
 };

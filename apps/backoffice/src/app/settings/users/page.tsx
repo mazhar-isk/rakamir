@@ -1,9 +1,10 @@
 'use client';
 
+import { TableNoRowsOverlay } from '@/components/common/DataGridOverlays';
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { AdminUser, apiDelete, apiPatch, apiPost, usePaginated } from '@ecommerce/api-client';
+import { AdminUser, apiDelete, apiPatch, usePaginated } from '@ecommerce/api-client';
 import { formatDate } from '@ecommerce/utils';
-import { Add, Block, CheckCircle, Delete } from '@mui/icons-material';
+import { Add, Block, CheckCircle, Delete, Search } from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -17,6 +18,7 @@ import {
   FormControl,
   Grid,
   IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
@@ -47,7 +49,21 @@ const schema = Yup.object({
 export default function AdminUsersPage() {
   const [page, setPage] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data, isLoading, mutate } = usePaginated<AdminUser>(`/admin/users?page=${page + 1}&per_page=10`);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [roleId, setRoleId] = useState('');
+
+  const queryString = new URLSearchParams({
+    page: String(page + 1),
+    limit: '10',
+    search: search,
+    status: status,
+    role_id: roleId,
+    sort_by: 'created_at',
+    sort_type: 'desc'
+  }).toString();
+
+  const { data, isLoading, mutate } = usePaginated<AdminUser>(`/admin/users?${queryString}`);
   const { mutate: globalMutate } = useSWRConfig();
   const users = data?.data ?? [];
 
@@ -55,24 +71,14 @@ export default function AdminUsersPage() {
     initialValues: { name: '', email: '', password: '', role: '' },
     validationSchema: schema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
-      try {
-        await apiPost('/admin/users', values);
-        toast.success('Admin user berhasil dibuat.');
-        mutate();
-        setDialogOpen(false);
-        resetForm();
-      } catch {
-        toast.error('Gagal membuat user.');
-      } finally {
-        setSubmitting(false);
-      }
+      console.log({ values })
     },
   });
 
   const handleToggleActive = async (user: AdminUser) => {
     try {
-      await apiPatch(`/admin/users/${user.id}`, { is_active: !user.is_active });
-      toast.success(`User ${user.is_active ? 'dinonaktifkan' : 'diaktifkan'}.`);
+      await apiPatch(`/admin/users/${user.id}`, { status: user.status });
+      toast.success(`User ${user.status === 'active' ? 'dinonaktifkan' : 'diaktifkan'}.`);
       mutate();
     } catch {
       toast.error('Gagal mengubah status user.');
@@ -95,7 +101,7 @@ export default function AdminUsersPage() {
       field: 'name', headerName: 'Admin User', flex: 1, minWidth: 220, display: 'flex',
       renderCell: (p: GridRenderCellParams<AdminUser>) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: ROLE_COLORS[p.row.role?.slug] ?? '#6B7280', fontSize: '0.85rem' }}>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: ROLE_COLORS[p.row.role?.login_scope] ?? '#6B7280', fontSize: '0.85rem' }}>
             {p.row.name?.[0]?.toUpperCase()}
           </Avatar>
           <Box>
@@ -108,23 +114,23 @@ export default function AdminUsersPage() {
     {
       field: 'role', headerName: 'Role', width: 170,
       renderCell: (p: GridRenderCellParams<AdminUser>) => {
-        const slug = p.row.role?.slug ?? '';
-        const color = ROLE_COLORS[slug] ?? '#6B7280';
-        return <Chip label={p.row.role?.name ?? slug} size="small" sx={{ bgcolor: `${color}18`, color, fontWeight: 600, fontSize: '0.72rem' }} />;
+        const scope = p.row.role?.login_scope ?? '';
+        const color = ROLE_COLORS[scope] ?? '#6B7280';
+        return <Chip label={p.row.role?.name ?? scope} size="small" sx={{ bgcolor: `${color}18`, color, fontWeight: 600, fontSize: '0.72rem' }} />;
       },
     },
     {
-      field: 'is_active', headerName: 'Status', width: 110,
-      renderCell: (p) => <Chip label={p.value ? 'Aktif' : 'Nonaktif'} size="small" color={p.value ? 'success' : 'default'} />,
+      field: 'status', headerName: 'Status', width: 110,
+      renderCell: (p) => <Chip label={p.value === 'active' ? 'Aktif' : 'Nonaktif'} size="small" color={p.value === 'active' ? 'success' : 'default'} />,
     },
     { field: 'created_at', headerName: 'Dibuat', width: 140, renderCell: (p) => formatDate(p.value) },
     {
       field: 'actions', headerName: 'Aksi', width: 110, sortable: false,
       renderCell: (p: GridRenderCellParams<AdminUser>) => (
         <Box>
-          <Tooltip title={p.row.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-            <IconButton size="small" onClick={() => handleToggleActive(p.row)} color={p.row.is_active ? 'warning' : 'success'}>
-              {p.row.is_active ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
+          <Tooltip title={p.row.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}>
+            <IconButton size="small" onClick={() => handleToggleActive(p.row)} color={p.row.status === 'active' ? 'warning' : 'success'}>
+              {p.row.status === 'active' ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
             </IconButton>
           </Tooltip>
           <Tooltip title="Hapus">
@@ -149,11 +155,36 @@ export default function AdminUsersPage() {
         </Button>
       </Box>
 
+      <Card sx={{ p: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <TextField size="small" placeholder="Cari admin..." value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+            sx={{ minWidth: 280 }} />
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Status</InputLabel>
+            <Select value={status} label="Status" onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
+              <MenuItem value="">Semua Status</MenuItem>
+              <MenuItem value="active">Aktif</MenuItem>
+              <MenuItem value="inactive">Nonaktif</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Card>
+
       <Card>
         <DataGrid rows={users} columns={columns} loading={isLoading}
           rowCount={data?.meta.total ?? 0} paginationMode="server"
           paginationModel={{ page, pageSize: 10 }} onPaginationModelChange={(m) => setPage(m.page)}
           pageSizeOptions={[10]} rowHeight={60} disableRowSelectionOnClick
+          slots={{
+            noRowsOverlay: () => (
+              <TableNoRowsOverlay
+                message="Belum Ada Admin User"
+                description="Belum ada pengguna admin tambahan yang terdaftar."
+              />
+            )
+          }}
           sx={{ border: 'none', minHeight: 400 }} />
       </Card>
 

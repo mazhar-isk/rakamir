@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { CartItem, Product, ProductVariant } from '@ecommerce/api-client';
+import { apiClient, apiPost, CartItem, Product, ProductVariant } from '@ecommerce/api-client';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -9,90 +9,135 @@ interface CartContextType {
   items: CartItem[];
   itemCount: number;
   total: number;
-  addItem: (product: Product, quantity?: number, variant?: ProductVariant) => void;
-  removeItem: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
-  clearCart: () => void;
+  cartId: string | null;
+  addItem: (product: Product, quantity?: number, variant?: ProductVariant) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const mapBackendItemToCartItem = (item: any): CartItem => {
+  const actualPrice = item.price / 100;
+  const actualSubtotal = item.subtotal / 100;
+
+  return {
+    id: item.product_id, // Use product_id as the ID for simpler update/delete matching
+    product: {
+      id: item.product_id,
+      slug: item.product_id,
+      name: item.name,
+      description: '',
+      price: actualPrice,
+      original_price: actualPrice,
+      stock: 999,
+      images: item.image_url ? [item.image_url] : [],
+      category: { id: '', name: '', slug: '' },
+      categories: [],
+      tags: [],
+      rating: 5,
+      review_count: 0,
+      is_featured: false,
+      is_new: false,
+      is_active: true,
+      sold_count: 0,
+      created_at: item.created_at,
+    },
+    quantity: item.quantity,
+    subtotal: actualSubtotal,
+  };
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const { isAuthenticated } = useAuth();
+  const [cartId, setCartId] = useState<string | null>(null);
+  const { isAuthenticated, openAuthModal } = useAuth();
 
-  // Clear cart automatically when user logs out
-  useEffect(() => {
+  const fetchCart = async () => {
     if (!isAuthenticated) {
       setItems([]);
-    }
-  }, [isAuthenticated]);
-
-  const addItem = (product: Product, quantity = 1, variant?: ProductVariant) => {
-    if (!isAuthenticated) {
-      toast.info('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.');
-      // Navigate to login — we use window.location to avoid needing useRouter here
-      const returnUrl = encodeURIComponent(window.location.pathname);
-      window.location.href = `/auth/login?returnUrl=${returnUrl}`;
+      setCartId(null);
       return;
     }
-
-    let isUpdate = false;
-
-    setItems((prev) => {
-      const existing = prev.find(
-        (i) => i.product.id === product.id && i.variant?.id === variant?.id
-      );
-      const unitPrice = product.price + (variant?.price_modifier ?? 0);
-      if (existing) {
-        isUpdate = true;
-        return prev.map((i) =>
-          i.id === existing.id
-            ? { ...i, quantity: i.quantity + quantity, subtotal: (i.quantity + quantity) * unitPrice }
-            : i
-        );
+    try {
+      const response = await apiClient.get<any>('/carts').then((res) => res.data);
+      if (response && response.items) {
+        setCartId(response.id);
+        const mappedItems = response.items.map(mapBackendItemToCartItem);
+        setItems(mappedItems);
+      } else {
+        setCartId(null);
+        setItems([]);
       }
-      const newItem: CartItem = {
-        id: `${product.id}-${variant?.id ?? 'default'}-${Date.now()}`,
-        product,
-        variant,
-        quantity,
-        subtotal: quantity * unitPrice,
-      };
-      return [...prev, newItem];
-    });
-
-    // Show success notification after state update is queued
-    const label = variant ? `${product.name} (${variant.name})` : product.name;
-    if (isUpdate) {
-      toast.success(`Jumlah "${label}" diperbarui di keranjang 🛒`);
-    } else {
-      toast.success(`"${label}" berhasil ditambahkan ke keranjang 🛒`);
+    } catch (err) {
+      console.error('Failed to fetch cart:', err);
     }
   };
 
+  // Sync cart automatically when user auth state changes
+  useEffect(() => {
+    fetchCart();
+  }, [isAuthenticated]);
 
-  const removeItem = (itemId: string) =>
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+  const addItem = async (product: Product, quantity = 1, variant?: ProductVariant) => {
+    if (!isAuthenticated) {
+      toast.info('Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.');
+      openAuthModal(window.location.pathname);
+      return;
+    }
 
-  const updateQuantity = (itemId: string, quantity: number) =>
-    setItems((prev) =>
-      prev.map((i) => {
-        if (i.id === itemId) {
-          const unitPrice = i.product.price + (i.variant?.price_modifier ?? 0);
-          return { ...i, quantity, subtotal: quantity * unitPrice };
-        }
-        return i;
-      })
-    );
+    try {
+      await apiPost<any>('/carts/items', {
+        product_id: product.id,
+        quantity,
+      });
+      await fetchCart();
 
-  const clearCart = () => setItems([]);
+      const label = variant ? `${product.name} (${variant.name})` : product.name;
+      toast.success(`"${label}" berhasil ditambahkan ke keranjang 🛒`);
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || err?.message || 'Gagal menambahkan produk';
+      toast.error(errMsg);
+    }
+  };
+
+  const removeItem = async (itemId: string) => {
+    if (!isAuthenticated) return;
+    try {
+      await apiClient.delete(`/carts/items/${itemId}`);
+      await fetchCart();
+      toast.success('Produk berhasil dihapus dari keranjang');
+    } catch (err: any) {
+      toast.error('Gagal menghapus produk dari keranjang');
+    }
+  };
+
+  const updateQuantity = async (itemId: string, quantity: number) => {
+    if (!isAuthenticated) return;
+    try {
+      await apiClient.put(`/carts/items/${itemId}`, { quantity });
+      await fetchCart();
+    } catch (err: any) {
+      toast.error('Gagal memperbarui jumlah produk');
+    }
+  };
+
+  const clearCart = async () => {
+    if (!isAuthenticated) return;
+    try {
+      await apiClient.delete('/carts');
+      setItems([]);
+    } catch (err: any) {
+      console.error('Failed to clear cart:', err);
+    }
+  };
 
   const total = items.reduce((sum, i) => sum + i.subtotal, 0);
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, itemCount, total, addItem, removeItem, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ items, itemCount, total, cartId, addItem, removeItem, updateQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   );

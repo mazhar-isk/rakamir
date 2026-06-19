@@ -1,5 +1,6 @@
 'use client';
 
+import { TableNoRowsOverlay } from '@/components/common/DataGridOverlays';
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
 import { usePaginated, User } from '@ecommerce/api-client';
 import { formatDate } from '@ecommerce/utils';
@@ -13,8 +14,8 @@ export default function CustomersPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
 
-  const queryString = new URLSearchParams({ page: String(page + 1), per_page: '10', ...(search && { q: search }) }).toString();
-  const { data, isLoading } = usePaginated<User>(`/admin/customers?${queryString}`);
+  const queryString = new URLSearchParams({ customer_only: 'true', page: String(page + 1), per_page: '10', ...(search && { q: search }) }).toString();
+  const { data, isLoading } = usePaginated<User>(`/admin/users?${queryString}`);
   const customers = data?.data ?? [];
 
   const columns: GridColDef[] = [
@@ -30,7 +31,7 @@ export default function CustomersPage() {
         </Box>
       ),
     },
-    { field: 'phone', headerName: 'Telepon', width: 150, renderCell: (p) => p.value || '-' },
+    { field: 'phone_number', headerName: 'Telepon', width: 150, renderCell: (p) => p.value || '-' },
     { field: 'created_at', headerName: 'Bergabung', width: 150, renderCell: (p) => formatDate(p.value) },
     {
       field: 'actions', headerName: 'Aksi', width: 80, sortable: false,
@@ -54,7 +55,16 @@ export default function CustomersPage() {
         <DataGrid rows={customers} columns={columns} loading={isLoading}
           rowCount={data?.meta.total ?? 0} paginationMode="server"
           paginationModel={{ page, pageSize: 10 }} onPaginationModelChange={(m) => setPage(m.page)}
-          pageSizeOptions={[10]} rowHeight={60} disableRowSelectionOnClick sx={{ border: 'none', minHeight: 400 }} />
+          pageSizeOptions={[10]} rowHeight={60} disableRowSelectionOnClick
+          slots={{
+            noRowsOverlay: () => (
+              <TableNoRowsOverlay
+                message="Belum Ada Pelanggan"
+                description="Belum ada pelanggan terdaftar di toko Anda."
+              />
+            )
+          }}
+          sx={{ border: 'none', minHeight: 400 }} />
       </Card>
     </BackofficeLayout>
   );

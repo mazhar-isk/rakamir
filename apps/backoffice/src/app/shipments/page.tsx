@@ -1,5 +1,6 @@
 'use client';
 
+import { TableNoRowsOverlay } from '@/components/common/DataGridOverlays';
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
 import { ShipmentTracking, usePaginated } from '@ecommerce/api-client';
 import { formatDate, formatDateTime, getOrderStatusColor, getOrderStatusLabel, OrderStatus } from '@ecommerce/utils';
@@ -33,7 +34,7 @@ interface AdminShipment extends ShipmentTracking {
   id: string;
   order_number: string;
   order_id: string;
-  recipient: string;
+  recipient_name: string;
   courier_service: string;
   created_at: string;
   events: TrackingEvent[];
@@ -43,8 +44,8 @@ interface AdminShipment extends ShipmentTracking {
 const MOCK_ROWS: AdminShipment[] = [
   {
     id: 's-1', order_number: 'ORD-20240501-001', order_id: 'ord-1',
-    tracking_number: 'JNE-1234567890', courier: 'JNE Express', courier_service: 'YES',
-    recipient: 'Muhammad Azhar', status: 'delivered', estimated_delivery: '3 Mei 2024',
+    tracking_number: 'JNE-1234567890', courier_name: 'JNE Express', courier_service: 'YES',
+    recipient_name: 'Muhammad Azhar', status: 'delivered', estimated_delivery_date: '3 Mei 2024',
     created_at: '2024-05-01T00:00:00Z',
     events: [
       { status: 'picked_up', description: 'Paket diambil oleh kurir', location: 'Jakarta Selatan', timestamp: '2024-05-01T09:00:00Z' },
@@ -55,8 +56,8 @@ const MOCK_ROWS: AdminShipment[] = [
   },
   {
     id: 's-2', order_number: 'ORD-20240510-002', order_id: 'ord-2',
-    tracking_number: 'SICEPAT-9876543210', courier: 'SiCepat Ekspress', courier_service: 'REG',
-    recipient: 'Budi Santoso', status: 'shipped', estimated_delivery: '13 Mei 2024',
+    tracking_number: 'SICEPAT-9876543210', courier_name: 'SiCepat Ekspress', courier_service: 'REG',
+    recipient_name: 'Budi Santoso', status: 'shipped', estimated_delivery_date: '13 Mei 2024',
     created_at: '2024-05-10T00:00:00Z',
     events: [
       { status: 'picked_up', description: 'Paket diambil oleh kurir', location: 'Bandung', timestamp: '2024-05-10T10:00:00Z' },
@@ -113,9 +114,9 @@ function ShipmentDrawer({ shipment, onClose }: { shipment: AdminShipment | null;
 
         {/* Info grid */}
         {[
-          { label: 'Penerima', value: shipment.recipient },
-          { label: 'Kurir', value: `${shipment.courier} · ${shipment.courier_service}` },
-          { label: 'Est. Tiba', value: shipment.estimated_delivery },
+          { label: 'Penerima', value: shipment.recipient_name },
+          { label: 'Kurir', value: `${shipment.courier_name} · ${shipment.courier_service}` },
+          { label: 'Est. Tiba', value: shipment.estimated_delivery_date },
           { label: 'Dikirim', value: formatDate(shipment.created_at) },
         ].map(({ label, value }) => (
           <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
@@ -199,9 +200,9 @@ export default function ShipmentsPage() {
       field: 'tracking_number', headerName: 'No. Resi', width: 200, display: 'flex',
       renderCell: (p) => <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'primary.main' }}>{p.value}</Typography>,
     },
-    { field: 'recipient', headerName: 'Penerima', flex: 1, minWidth: 150 },
+    { field: 'recipient_name', headerName: 'Penerima', flex: 1, minWidth: 150 },
     {
-      field: 'courier', headerName: 'Kurir', width: 160, display: 'flex',
+      field: 'courier_name', headerName: 'Kurir', width: 160, display: 'flex',
       renderCell: (p) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <LocalShipping sx={{ fontSize: 16, color: 'primary.main' }} />
@@ -216,7 +217,7 @@ export default function ShipmentsPage() {
         return <Chip label={getOrderStatusLabel(p.value as OrderStatus)} size="small" sx={{ bgcolor: `${color}18`, color, fontWeight: 600, fontSize: '0.72rem' }} />;
       },
     },
-    { field: 'estimated_delivery', headerName: 'Est. Tiba', width: 130 },
+    { field: 'estimated_delivery_date', headerName: 'Est. Tiba', width: 130, renderCell: (p) => p.value ? formatDateTime(p.value) : '-' },
     { field: 'created_at', headerName: 'Dibuat', width: 120, renderCell: (p) => formatDate(p.value) },
   ];
 
@@ -225,7 +226,7 @@ export default function ShipmentsPage() {
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={700}>Manajemen Pengiriman</Typography>
         <Typography variant="body2" color="text.secondary">
-          {data?.meta.total ?? rows.length} total pengiriman · Klik baris untuk melihat detail tracking
+          {data?.meta?.total ?? rows.length} total pengiriman · Klik baris untuk melihat detail tracking
         </Typography>
       </Box>
 
@@ -245,7 +246,7 @@ export default function ShipmentsPage() {
           rows={rows}
           columns={columns}
           loading={isLoading}
-          rowCount={data?.meta.total ?? rows.length}
+          rowCount={data?.meta?.total ?? rows.length}
           paginationMode={data ? 'server' : 'client'}
           paginationModel={{ page, pageSize: 10 }}
           onPaginationModelChange={(m) => setPage(m.page)}
@@ -253,6 +254,14 @@ export default function ShipmentsPage() {
           rowHeight={56}
           disableRowSelectionOnClick
           onRowClick={(params) => setSelectedShipment(params.row as AdminShipment)}
+          slots={{
+            noRowsOverlay: () => (
+              <TableNoRowsOverlay
+                message="Belum Ada Pengiriman"
+                description="Belum ada resi pengiriman atau pesanan yang sedang diantar."
+              />
+            )
+          }}
           sx={{
             border: 'none',
             minHeight: 400,

@@ -19,11 +19,13 @@ export interface LoginResponse {
 // ---- User ----
 export interface User {
   id: string;
-  name: string;
+  full_name: string;
+  name?: string;
   email: string;
+  phone_number?: string;
   phone?: string;
   avatar?: string;
-  role?: string;
+  role?: any;
   created_at: string;
 }
 
@@ -32,33 +34,41 @@ export interface Address {
   id: string;
   label: string;
   recipient_name: string;
-  phone: string;
+  recipient_phone: string;
   address: string;
   city: string;
+  city_id: string;
   province: string;
+  province_id: string;
+  district?: string;
+  district_id?: string;
+  subdistrict?: string;
+  subdistrict_id?: string;
   postal_code: string;
-  is_default: boolean;
+  is_main: boolean;
 }
 
 // ---- Product ----
 export interface ProductOptionValue {
-  id: string;
+  option_value_id: string;
   value: string;
 }
 
 export interface ProductOption {
-  id: string;
+  option_id: string;
   name: string; // e.g., "Color", "Size"
   values: ProductOptionValue[];
 }
 
 export interface ProductSku {
   id: string;
+  sku_id: string;
   sku: string; // SKU code, e.g. "SWTR-BLU-S"
   price: number;
   original_price?: number;
   stock: number;
   images?: string[];
+  image_url?: string;
   picture?: string;
   option_values_map: Record<string, string>; // Maps option ID to value ID (e.g. { "opt-color": "val-blue", "opt-size": "val-s" })
 }
@@ -80,6 +90,7 @@ export interface Product {
   review_count: number;
   is_featured: boolean;
   is_new: boolean;
+  is_active: boolean;
   sold_count: number;
   created_at: string;
   options?: ProductOption[];
@@ -90,7 +101,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  image?: string;
+  image_url?: string;
   parent_id?: string;
 }
 
@@ -166,15 +177,21 @@ export interface TrackingEvent {
 
 export interface ShipmentTracking {
   tracking_number: string;
-  courier: string;
+  courier_name: string;
+  courier?: string;
   status: string;
-  estimated_delivery: string;
+  estimated_delivery_date: string;
+  estimated_delivery?: string;
   events: TrackingEvent[];
 }
 
 // ---- Pagination ----
 export interface PaginatedResponse<T> {
   data: T[];
+  limit: number;
+  page: number;
+  total: number;
+  total_pages: number;
   meta: {
     current_page: number;
     last_page: number;
@@ -202,7 +219,8 @@ export interface RevenueChart {
 export interface Role {
   id: string;
   name: string;
-  slug: string;
+  // slug: string;
+  login_scope: string;
   permissions: string[];
 }
 
@@ -211,6 +229,6 @@ export interface AdminUser {
   name: string;
   email: string;
   role: Role;
-  is_active: boolean;
+  status: string;
   created_at: string;
 }

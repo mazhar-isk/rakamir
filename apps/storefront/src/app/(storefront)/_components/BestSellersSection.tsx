@@ -1,65 +1,70 @@
 'use client';
 
 import ProductCard from '@/components/product/ProductCard';
+import { useIntersection } from '@/hooks/useIntersection';
 import { PaginatedResponse, Product, useGet } from '@ecommerce/api-client';
 import { TrendingUp } from '@mui/icons-material';
 import { Box, Button, Chip, Container, Grid, Skeleton, Typography } from '@mui/material';
 import Link from 'next/link';
 
 export default function BestSellersSection() {
-  const { data, isLoading } = useGet<PaginatedResponse<Product>>('/products?sort=sold_count&per_page=4');
+  const [ref, isIntersecting] = useIntersection();
+  const { data, isLoading: apiLoading } = useGet<PaginatedResponse<Product>>(
+    isIntersecting ? '/products?sort_by=sold_count&sort_dir=desc&per_page=4' : null
+  );
   const products = data?.data ?? [];
+  const isLoading = apiLoading || !isIntersecting;
 
   return (
-    <Box sx={{ py: 10, bgcolor: '#F9F6F2', borderTop: '1px solid rgba(235, 196, 184, 0.2)' }}>
+    <Box ref={ref} sx={{ py: 10, bgcolor: '#F9F6F2', borderTop: '1px solid rgba(235, 196, 184, 0.2)' }}>
       <Container maxWidth="lg">
         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 6 }}>
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <TrendingUp sx={{ color: '#D26B54', fontSize: 20 }} />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#D26B54', 
-                  fontWeight: 700, 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.15em', 
+              <Typography
+                variant="caption"
+                sx={{
+                  color: '#D26B54',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
                   fontSize: '0.75rem'
                 }}
               >
                 Top Seller
               </Typography>
-              <Chip 
-                label="🔥 POPULAR" 
-                size="small" 
-                sx={{ 
-                  bgcolor: '#FDF5F2', 
+              <Chip
+                label="🔥 POPULAR"
+                size="small"
+                sx={{
+                  bgcolor: '#FDF5F2',
                   color: '#D26B54',
                   fontSize: '0.65rem',
                   fontWeight: 700,
                   height: 20,
                   borderRadius: '6px'
-                }} 
+                }}
               />
             </Box>
-            <Typography 
-              variant="h4" 
+            <Typography
+              variant="h4"
               fontWeight={700}
-              sx={{ 
-                color: '#2E2A27', 
-                fontFamily: '"Outfit", "Inter", sans-serif',
+              sx={{
+                color: '#2E2A27',
+                fontFamily: '"Playfair Display", serif',
                 letterSpacing: '-0.02em'
               }}
             >
               Terlaris
             </Typography>
           </Box>
-          <Button 
-            component={Link} 
-            href="/products?sort=sold_count" 
-            variant="outlined" 
-            size="medium" 
-            sx={{ 
+          <Button
+            component={Link}
+            href="/products?sort=sold_count"
+            variant="outlined"
+            size="medium"
+            sx={{
               display: { xs: 'none', sm: 'flex' },
               borderColor: '#EBC4B8',
               color: '#D26B54',

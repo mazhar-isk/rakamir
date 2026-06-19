@@ -1,24 +1,32 @@
 'use client';
 
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { apiClient, apiPut, Product, useGet } from '@ecommerce/api-client';
+import { apiClient, apiPut, Category, Product, useGet, usePaginated } from '@ecommerce/api-client';
 import { Add as AddIcon, ArrowBack, ArrowForward, CloudUpload, Delete } from '@mui/icons-material';
 import {
   Avatar,
   Box,
   Button,
   Card,
+  Checkbox,
   Chip,
   CircularProgress,
+  FormControl,
   FormControlLabel,
   Grid,
   IconButton,
+  InputLabel,
+  ListItemText,
+  MenuItem,
+  OutlinedInput,
   Paper,
+  Select,
   Switch,
   Table,
   TableBody,
   TableCell,
-  TableHead, TableRow,
+  TableHead,
+  TableRow,
   TextField,
   Typography
 } from '@mui/material';
@@ -28,15 +36,6 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import * as Yup from 'yup';
-
-const MOCK_CATEGORIES_LIST = [
-  { id: 'cat-1', name: 'Elektronik' },
-  { id: 'cat-2', name: 'Fashion' },
-  { id: 'cat-3', name: 'Rumah' },
-  { id: 'cat-4', name: 'Olahraga' },
-  { id: 'cat-5', name: 'Kecantikan' },
-  { id: 'cat-6', name: 'Makanan' }
-];
 
 const schema = Yup.object({
   name: Yup.string().required('Nama produk wajib diisi'),
@@ -55,6 +54,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [uploadingSkus, setUploadingSkus] = useState<Record<number, boolean>>({});
   const [deletedCombinations, setDeletedCombinations] = useState<Record<string, string>[]>([]);
 
+  const { data: categoriesData } = usePaginated<Category>('/admin/categories?limit=100');
+  const categoriesList = categoriesData?.data ?? [];
+
   const isUploading = uploadingProductImages || Object.values(uploadingSkus).some(Boolean);
 
   const formik = useFormik({
@@ -68,21 +70,26 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       tags: '',
       is_featured: false,
       is_new: false,
+      is_active: false,
       images: [] as string[],
-      options: [] as Array<{ id: string; name: string; values: Array<{ id: string; value: string }>; rawInput?: string }>,
+      options: [] as Array<{ option_id: string; name: string; values: Array<{ option_value_id: string; value: string }>; rawInput?: string }>,
       skus: [] as Array<{
         id: string;
+        sku_id: string;
         sku: string;
         price: number;
         original_price?: number;
         stock: number;
-        picture?: string;
+        image_url?: string;
         option_values_map: Record<string, string>;
       }>,
+      remove_skus: [] as string[],
+      remove_images: [] as string[],
+      add_images: [] as string[],
     },
     validationSchema: schema,
     onSubmit: async (values, { setSubmitting }) => {
-      const body = {
+      const payload = {
         ...values,
         category_id: values.category_ids[0] || 'cat-1',
         tags: typeof values.tags === 'string'
@@ -94,7 +101,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       }
 
       try {
-        await apiPut(`/admin/products/${params.id}`, body);
+        await apiPut(`/admin/products/${params.id}`, payload);
         toast.success('Produk berhasil diperbarui!');
         router.push('/products');
       } catch {
@@ -125,12 +132,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
         is_featured: product.is_featured,
         is_new: product.is_new,
+        is_active: product.is_active,
         images: product.images ?? [],
         options: product.options?.map((o) => ({
           ...o,
           rawInput: o.values?.map((v) => v.value).join(', ') ?? '',
         })) ?? [],
         skus: product.skus ?? [],
+        remove_skus: [],
+        remove_images: [],
+        add_images: [],
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,15 +155,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     try {
       const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
-        formData.append('file', file);
-        const res = await apiClient.post<{ url: string }>('/admin/upload', formData, {
+        formData.append('image', file);
+        const res = await apiClient.post<{ image_url: string }>('/admin/images', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        return res.data.url;
+        return res.data.image_url;
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
       formik.setFieldValue('images', [...formik.values.images, ...uploadedUrls]);
+      formik.setFieldValue('add_images', [...formik.values.add_images, ...uploadedUrls]);
       toast.success(`${files.length} gambar berhasil diunggah.`);
     } catch (error) {
       console.error(error);
@@ -163,7 +175,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   };
 
   const removeImage = (idx: number) => {
+    const targetImage = formik.values.images[idx];
     formik.setFieldValue('images', formik.values.images.filter((_, i) => i !== idx));
+
+    if (formik.values.add_images.includes(targetImage)) {
+      formik.setFieldValue('add_images', formik.values.add_images.filter((img) => img !== targetImage));
+    } else {
+      if (!formik.values.remove_images.includes(targetImage)) {
+        formik.setFieldValue('remove_images', [...formik.values.remove_images, targetImage]);
+      }
+    }
   };
 
   const moveImage = (index: number, direction: 'left' | 'right') => {
@@ -178,116 +199,122 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   };
 
   const regenerateSkus = (options: typeof formik.values.options) => {
-    if (options.length === 0 || options.every(o => !o.values || o.values.length === 0)) {
-      formik.setFieldValue('skus', []);
-      return;
-    }
+    let nextSkus: typeof formik.values.skus = [];
 
     const validOptions = options.filter(o => o.values && o.values.length > 0);
-    if (validOptions.length === 0) {
-      formik.setFieldValue('skus', []);
-      return;
-    }
-
-    const combinations = validOptions.reduce<Array<Array<{ optId: string; valId: string; valVal: string }>>>(
-      (acc, opt) => {
-        const next: typeof acc = [];
-        acc.forEach((comb) => {
-          opt.values?.forEach((val) => {
-            next.push([...comb, { optId: opt.id, valId: val.id, valVal: val.value }]);
-          });
-        });
-        return next;
-      },
-      [[]]
-    );
-
-    const basePrice = parseFloat(formik.values.price) || 0;
-
-    const nextSkus = combinations
-      .map((comb, index) => {
-        const map: Record<string, string> = {};
-        comb.forEach(item => {
-          map[item.optId] = item.valId;
-        });
-
-        // Check if this combination was deleted by the user
-        const isDeleted = deletedCombinations.some(deletedMap => {
-          const newEntries = Object.entries(map);
-          const deletedEntries = Object.entries(deletedMap);
-          if (newEntries.length !== deletedEntries.length) return false;
-
-          return newEntries.every(([oId, vId]) => {
-            const newOpt = options.find(o => o.id === oId);
-            const newVal = newOpt?.values?.find(v => v.id === vId);
-            const newValVal = newVal?.value?.trim().toLowerCase();
-
-            const delOpt = formik.values.options.find(o => o.id === oId) || options.find(o => o.id === oId);
-            const delValId = deletedMap[oId];
-            const delVal = delOpt?.values?.find(v => v.id === delValId);
-            const delValVal = delVal?.value?.trim().toLowerCase();
-
-            return newValVal === delValVal;
-          });
-        });
-
-        if (isDeleted) return null;
-
-        const existing = formik.values.skus.find((sku) => {
-          if (!sku.option_values_map) return false;
-
-          const newEntries = Object.entries(map);
-          const skuEntries = Object.entries(sku.option_values_map);
-
-          if (newEntries.length !== skuEntries.length) return false;
-
-          return newEntries.every(([oId, vId]) => {
-            const newOpt = options.find(o => o.id === oId);
-            if (!newOpt || !newOpt.name) return false;
-            const newOptName = newOpt.name.trim().toLowerCase();
-
-            const newVal = newOpt.values?.find(v => v.id === vId);
-            if (!newVal || !newVal.value) return false;
-            const newValVal = newVal.value.trim().toLowerCase();
-
-            return skuEntries.some(([prevOId, prevVId]) => {
-              const prevOpt = formik.values.options.find(o => o.id === prevOId);
-              if (!prevOpt || !prevOpt.name) return false;
-              const prevOptName = prevOpt.name.trim().toLowerCase();
-              if (prevOptName !== newOptName) return false;
-
-              const prevVal = prevOpt.values?.find(v => v.id === prevVId);
-              if (!prevVal || !prevVal.value) return false;
-              const prevValVal = prevVal.value.trim().toLowerCase();
-
-              return prevValVal === newValVal;
+    if (options.length > 0 && validOptions.length > 0) {
+      const combinations = validOptions.reduce<Array<Array<{ optId: string; valId: string; valVal: string }>>>(
+        (acc, opt) => {
+          const next: typeof acc = [];
+          acc.forEach((comb) => {
+            opt.values?.forEach((val) => {
+              next.push([...comb, { optId: opt.option_id, valId: val.option_value_id, valVal: val.value }]);
             });
           });
-        });
+          return next;
+        },
+        [[]]
+      );
 
-        if (existing) {
+      const basePrice = parseFloat(formik.values.price) || 0;
+
+      nextSkus = combinations
+        .map((comb, index) => {
+          const map: Record<string, string> = {};
+          comb.forEach(item => {
+            map[item.optId] = item.valId;
+          });
+
+          // Check if this combination was deleted by the user
+          const isDeleted = deletedCombinations.some(deletedMap => {
+            const newEntries = Object.entries(map);
+            const deletedEntries = Object.entries(deletedMap);
+            if (newEntries.length !== deletedEntries.length) return false;
+
+            return newEntries.every(([oId, vId]) => {
+              const newOpt = options.find(o => o.option_id === oId);
+              const newVal = newOpt?.values?.find(v => v.option_value_id === vId);
+              const newValVal = newVal?.value?.trim().toLowerCase();
+
+              const delOpt = formik.values.options.find(o => o.option_id === oId) || options.find(o => o.option_id === oId);
+              const delValId = deletedMap[oId];
+              const delVal = delOpt?.values?.find(v => v.option_value_id === delValId);
+              const delValVal = delVal?.value?.trim().toLowerCase();
+
+              return newValVal === delValVal;
+            });
+          });
+
+          if (isDeleted) return null;
+
+          const existing = formik.values.skus.find((sku) => {
+            if (!sku.option_values_map) return false;
+
+            const newEntries = Object.entries(map);
+            const skuEntries = Object.entries(sku.option_values_map);
+
+            if (newEntries.length !== skuEntries.length) return false;
+
+            return newEntries.every(([oId, vId]) => {
+              const newOpt = options.find(o => o.option_id === oId);
+              if (!newOpt || !newOpt.name) return false;
+              const newOptName = newOpt.name.trim().toLowerCase();
+
+              const newVal = newOpt.values?.find(v => v.option_value_id === vId);
+              if (!newVal || !newVal.value) return false;
+              const newValVal = newVal.value.trim().toLowerCase();
+
+              return skuEntries.some(([prevOId, prevVId]) => {
+                const prevOpt = formik.values.options.find(o => o.option_id === prevOId);
+                if (!prevOpt || !prevOpt.name) return false;
+                const prevOptName = prevOpt.name.trim().toLowerCase();
+                if (prevOptName !== newOptName) return false;
+
+                const prevVal = prevOpt.values?.find(v => v.option_value_id === prevVId);
+                if (!prevVal || !prevVal.value) return false;
+                const prevValVal = prevVal.value.trim().toLowerCase();
+
+                return prevValVal === newValVal;
+              });
+            });
+          });
+
+          if (existing) {
+            return {
+              ...existing,
+              option_values_map: map
+            };
+          }
+
+          const combCode = comb.map(c => c.valVal.substring(0, 3).toUpperCase()).join('-');
+          const prodNameSlug = formik.values.name
+            ? formik.values.name.substring(0, 5).toUpperCase().replace(/\s+/g, '')
+            : 'PROD';
+          const skuCode = `${prodNameSlug}-${combCode}-${index + 1}`;
+
           return {
-            ...existing,
-            option_values_map: map
-          };
-        }
+            sku_id: `sku-${Date.now()}-${index}`,
+            sku: skuCode,
+            price: basePrice,
+            stock: 0,
+            image_url: undefined,
+            option_values_map: map,
+          } as any;
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== null);
+    }
 
-        const combCode = comb.map(c => c.valVal.substring(0, 3).toUpperCase()).join('-');
-        const prodNameSlug = formik.values.name
-          ? formik.values.name.substring(0, 5).toUpperCase().replace(/\s+/g, '')
-          : 'PROD';
-        const skuCode = `${prodNameSlug}-${combCode}-${index + 1}`;
+    // Identify which existing database SKUs are being removed
+    const removedSkus = formik.values.skus.filter(
+      (oldSku) => !nextSkus.some((newSku) => newSku.sku_id === oldSku.sku_id)
+    );
+    const removedSkuIds = removedSkus
+      .map((s) => s.id)
+      .filter((id): id is string => !!id && !formik.values.remove_skus.includes(id));
 
-        return {
-          id: `sku-${Date.now()}-${index}`,
-          sku: skuCode,
-          price: basePrice,
-          stock: 0,
-          picture: undefined,
-          option_values_map: map,
-        };
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null);
+    if (removedSkuIds.length > 0) {
+      formik.setFieldValue('remove_skus', [...formik.values.remove_skus, ...removedSkuIds]);
+    }
 
     formik.setFieldValue('skus', nextSkus);
 
@@ -300,7 +327,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     const optId = `opt-${Date.now()}`;
     const newOptions = [
       ...formik.values.options,
-      { id: optId, name: '', values: [] as Array<{ id: string; value: string }>, rawInput: '' }
+      { option_id: optId, name: '', values: [] as Array<{ option_value_id: string; value: string }>, rawInput: '' }
     ];
     formik.setFieldValue('options', newOptions);
   };
@@ -308,8 +335,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const getOptionValueLabel = (map: Record<string, string>) => {
     if (!map) return '';
     return Object.entries(map).map(([optId, valId]) => {
-      const opt = formik.values.options.find(o => o.id === optId);
-      const val = opt?.values?.find(v => v.id === valId);
+      const opt = formik.values.options.find(o => o.option_id === optId);
+      const val = opt?.values?.find(v => v.option_value_id === valId);
       return `${opt?.name || 'Varian'}: ${val?.value || ''}`;
     }).join(', ');
   };
@@ -375,31 +402,38 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   </Grid>
                   <Grid item xs={6}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-                      <Typography variant="caption" color="text.secondary" mb={0.5} fontWeight={600}>Kategori (Multi-Category)</Typography>
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        {MOCK_CATEGORIES_LIST.map((cat) => {
-                          const isSelected = formik.values.category_ids.includes(cat.id);
-                          return (
-                            <Chip
-                              key={cat.id}
-                              label={cat.name}
-                              size="small"
-                              onClick={() => {
-                                const next = isSelected
-                                  ? formik.values.category_ids.filter(id => id !== cat.id)
-                                  : [...formik.values.category_ids, cat.id];
-                                formik.setFieldValue('category_ids', next);
-                              }}
-                              color={isSelected ? 'primary' : 'default'}
-                              variant={isSelected ? 'filled' : 'outlined'}
-                              sx={{ cursor: 'pointer', fontWeight: isSelected ? 600 : 400 }}
-                            />
-                          );
-                        })}
-                      </Box>
-                      {formik.touched.category_ids && formik.errors.category_ids && (
-                        <Typography variant="caption" color="error" mt={0.5}>{formik.errors.category_ids as string}</Typography>
-                      )}
+                      <FormControl fullWidth error={formik.touched.category_ids && Boolean(formik.errors.category_ids)}>
+                        <InputLabel id="category-select-label" size='small'>Kategori</InputLabel>
+                        <Select
+                          labelId="category-select-label"
+                          multiple
+                          size='small'
+                          name="category_ids"
+                          value={formik.values.category_ids}
+                          onChange={(e) => {
+                            formik.setFieldValue('category_ids', e.target.value);
+                          }}
+                          input={<OutlinedInput label="Kategori" />}
+                          renderValue={(selected) => (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {(selected as string[]).map((value) => {
+                                const cat = categoriesList.find((c) => c.id === value);
+                                return <Chip key={value} label={cat?.name || value} size="small" />;
+                              })}
+                            </Box>
+                          )}
+                        >
+                          {categoriesList.map((cat) => (
+                            <MenuItem key={cat.id} value={cat.id}>
+                              <Checkbox checked={formik.values.category_ids.indexOf(cat.id) > -1} />
+                              <ListItemText primary={cat.name} />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {formik.touched.category_ids && formik.errors.category_ids && (
+                          <Typography variant="caption" color="error" mt={0.5}>{formik.errors.category_ids as string}</Typography>
+                        )}
+                      </FormControl>
                     </Box>
                   </Grid>
                 </Grid>
@@ -433,7 +467,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 const isValuesDuplicated = valuesList.some((v, vIdx) => valuesList.indexOf(v) !== vIdx);
 
                 return (
-                  <Box key={opt.id} sx={{ p: 2, border: '1px solid #E5E7EB', borderRadius: 2, mb: 2, bgcolor: '#F9F6F2' }}>
+                  <Box key={opt.option_id} sx={{ p: 2, border: '1px solid #E5E7EB', borderRadius: 2, mb: 2, bgcolor: '#F9F6F2' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
                       <TextField
                         label="Nama Opsi (e.g. Ukuran, Warna)"
@@ -469,7 +503,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                             (val) => val.value.trim().toLowerCase() === v.trim().toLowerCase()
                           );
                           return {
-                            id: existingVal ? existingVal.id : `val-${opt.id}-${Date.now()}-${valIdx}`,
+                            option_value_id: existingVal ? existingVal.option_value_id : `val-${opt.option_id}-${Date.now()}-${valIdx}`,
                             value: v
                           };
                         });
@@ -487,7 +521,6 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   </Box>
                 );
               })}
-
               {formik.values.skus.length > 0 && (
                 <Box sx={{ mt: 4 }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>Tabel SKU Varian</Typography>
@@ -505,7 +538,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                       </TableHead>
                       <TableBody>
                         {formik.values.skus.map((sku, index) => (
-                          <TableRow key={sku.id}>
+                          <TableRow key={sku.sku_id}>
                             <TableCell sx={{ fontWeight: 600, maxWidth: 200 }}>
                               {getOptionValueLabel(sku.option_values_map)}
                             </TableCell>
@@ -525,7 +558,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                                   onClick={() => !uploadingSkus[index] && document.getElementById(`sku-file-input-${index}`)?.click()}
                                 >
                                   <Avatar
-                                    src={sku.picture}
+                                    src={sku.image_url}
                                     variant="rounded"
                                     sx={{ width: '100%', height: '100%' }}
                                   />
@@ -550,12 +583,12 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                                       setUploadingSkus((prev) => ({ ...prev, [index]: true }));
                                       try {
                                         const formData = new FormData();
-                                        formData.append('file', file);
-                                        const res = await apiClient.post<{ url: string }>('/admin/upload', formData, {
+                                        formData.append('image', file);
+                                        const res = await apiClient.post<{ image_url: string }>('/admin/images', formData, {
                                           headers: { 'Content-Type': 'multipart/form-data' },
                                         });
                                         const nextSkus = [...formik.values.skus];
-                                        nextSkus[index].picture = res.data.url;
+                                        nextSkus[index].image_url = res.data.image_url;
                                         formik.setFieldValue('skus', nextSkus);
                                         toast.success('Foto SKU berhasil diunggah.');
                                       } catch (error) {
@@ -567,13 +600,13 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                                     }
                                   }}
                                 />
-                                {sku.picture && (
+                                {sku.image_url && (
                                   <IconButton
                                     size="small"
                                     color="error"
                                     onClick={() => {
                                       const nextSkus = [...formik.values.skus];
-                                      nextSkus[index].picture = undefined;
+                                      nextSkus[index].image_url = undefined;
                                       formik.setFieldValue('skus', nextSkus);
                                     }}
                                     sx={{ p: 0.5 }}
@@ -626,6 +659,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                                 size="small"
                                 color="error"
                                 onClick={() => {
+                                  if (sku.id && !formik.values.remove_skus.includes(sku.id)) {
+                                    formik.setFieldValue('remove_skus', [...formik.values.remove_skus, sku.id]);
+                                  }
                                   setDeletedCombinations(prev => [...prev, sku.option_values_map]);
                                   const nextSkus = formik.values.skus.filter((_, i) => i !== index);
                                   formik.setFieldValue('skus', nextSkus);
@@ -710,6 +746,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <FormControlLabel control={<Switch checked={formik.values.is_featured} onChange={(e) => formik.setFieldValue('is_featured', e.target.checked)} color="primary" />} label="Produk Unggulan (Featured)" />
                 <FormControlLabel control={<Switch checked={formik.values.is_new} onChange={(e) => formik.setFieldValue('is_new', e.target.checked)} color="primary" />} label="Tandai sebagai Produk Baru" />
+                <FormControlLabel control={<Switch checked={formik.values.is_active} onChange={(e) => formik.setFieldValue('is_active', e.target.checked)} color="primary" />} label="Aktif" />
               </Box>
             </Card>
             <Button type="submit" variant="contained" fullWidth size="large" disabled={formik.isSubmitting || isUploading || hasDuplicateOptions}

@@ -1,8 +1,17 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { resolveMock } from './mock/handlers';
 
-const getBaseURL = () =>
-  process.env.NEXT_PUBLIC_API_URL || '/api';
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_API_URL || '/api';
+  }
+  const backendUrl = process.env.API_BACKEND_URL || 'https://api-dev.rakamir.com';
+  const publicApiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  if (publicApiUrl.startsWith('http')) {
+    return publicApiUrl;
+  }
+  return `${backendUrl}/v1`;
+};
 
 const isMockEnabled = () =>
   process.env.NEXT_PUBLIC_MOCK_API === 'true';
@@ -97,6 +106,8 @@ const createApiClient = (): AxiosInstance => {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+          document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax';
           window.location.href = '/auth/login';
         }
       }

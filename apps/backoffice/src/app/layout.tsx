@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Playfair_Display } from 'next/font/google';
 import './globals.css';
 import BackofficeProviders from './providers';
 
-const inter = Inter({ subsets: ['latin'] });
+const playfair = Playfair_Display({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic']
+});
 
 export const metadata: Metadata = {
   title: { default: 'Rakamir Webstore Admin', template: '%s | Rakamir Webstore Admin' },
@@ -14,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body className={inter.className}>
+      <body className={playfair.className}>
         <BackofficeProviders>{children}</BackofficeProviders>
       </body>
     </html>

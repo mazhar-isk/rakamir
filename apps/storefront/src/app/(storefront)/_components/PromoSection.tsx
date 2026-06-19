@@ -33,25 +33,25 @@ export default function PromoSection() {
           >
             <Grid container alignItems="stretch">
               {/* Text Content Column */}
-              <Grid 
-                item 
-                xs={12} 
-                md={6} 
-                sx={{ 
-                  p: { xs: 5, md: 8 }, 
-                  display: 'flex', 
-                  flexDirection: 'column', 
+              <Grid
+                item
+                xs={12}
+                md={6}
+                sx={{
+                  p: { xs: 5, md: 8 },
+                  display: 'flex',
+                  flexDirection: 'column',
                   justifyContent: 'center',
-                  alignItems: 'flex-start' 
+                  alignItems: 'flex-start'
                 }}
               >
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: '#D26B54', 
-                    fontWeight: 700, 
-                    textTransform: 'uppercase', 
-                    letterSpacing: '0.15em', 
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#D26B54',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
                     fontSize: '0.75rem',
                     mb: 2,
                     display: 'block'
@@ -59,13 +59,13 @@ export default function PromoSection() {
                 >
                   END OF SEASON SALE
                 </Typography>
-                
-                <Typography 
-                  variant="h3" 
-                  fontWeight={700} 
-                  sx={{ 
-                    color: '#2E2A27', 
-                    fontFamily: '"Outfit", "Inter", sans-serif',
+
+                <Typography
+                  variant="h3"
+                  fontWeight={700}
+                  sx={{
+                    color: '#2E2A27',
+                    fontFamily: '"Playfair Display", serif',
                     letterSpacing: '-0.02em',
                     lineHeight: 1.2,
                     mb: 2.5
@@ -73,19 +73,19 @@ export default function PromoSection() {
                 >
                   Koleksi Pilihan,<br />Diskon Hingga 70%
                 </Typography>
-                
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    color: '#6E625C', 
-                    lineHeight: 1.8, 
+
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#6E625C',
+                    lineHeight: 1.8,
                     mb: 5,
                     fontSize: '0.95rem'
                   }}
                 >
                   Sempurnakan penampilan Anda dengan koleksi tas kulit wanita premium kami. Penawaran terbatas untuk item-item kurasi terbaik dengan desain elegan dan pengerjaan halus.
                 </Typography>
-                
+
                 <Button
                   component={Link}
                   href="/products?filter=promo"
@@ -116,12 +116,12 @@ export default function PromoSection() {
               </Grid>
 
               {/* Image Visual Column */}
-              <Grid 
-                item 
-                xs={12} 
-                md={6} 
-                sx={{ 
-                  position: 'relative', 
+              <Grid
+                item
+                xs={12}
+                md={6}
+                sx={{
+                  position: 'relative',
                   minHeight: { xs: 300, md: 'auto' },
                   overflow: 'hidden'
                 }}
@@ -149,7 +149,7 @@ export default function PromoSection() {
                     }}
                   >
                     <Image
-                      src="/assets/images/promo_lifestyle.png"
+                      src="https://cdn.rakamir.com/gallery/WhatsApp%20Image%202026-06-13%20at%2010.53.47%20(2).jpeg"
                       alt="Koleksi Tas Kulit Wanita Premium Rakamir"
                       fill
                       sizes="(max-width: 960px) 100vw, 50vw"

@@ -24,7 +24,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+        sans: ['Playfair Display', 'ui-sans-serif', 'system-ui'],
+        serif: ['Playfair Display', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

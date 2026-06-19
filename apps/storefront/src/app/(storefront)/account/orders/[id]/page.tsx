@@ -1,7 +1,7 @@
 'use client';
 
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
-import { Order, ShipmentTracking, useGet } from '@ecommerce/api-client';
+import { ShipmentTracking, useGet } from '@ecommerce/api-client';
 import { formatCurrency, formatDateTime, getOrderStatusColor, getOrderStatusLabel, OrderStatus } from '@ecommerce/utils';
 import { AccessTime, ArrowBack, CheckCircle, Inventory, LocalShipping } from '@mui/icons-material';
 import {
@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 const trackingIcons: Record<string, React.ReactNode> = {
   picked_up: <Inventory sx={{ fontSize: 18 }} />,
@@ -30,7 +30,51 @@ const trackingIcons: Record<string, React.ReactNode> = {
 };
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
-  const { data: order, isLoading: orderLoading } = useGet<Order>(`/account/orders/${params.id}`);
+  const { data: rawOrder, isLoading: orderLoading } = useGet<any>(`/transactions/${params.id}`);
+
+  const order = useMemo(() => {
+    if (!rawOrder) return null;
+
+    const subtotal = rawOrder.summary?.subtotal || 0;
+    const shipping_cost = rawOrder.summary?.shipping_cost || 0;
+    const discount = rawOrder.summary?.discount_amount || 0;
+    const total = rawOrder.summary?.grand_total || 0;
+
+    const items = (rawOrder.items || []).map((item: any) => ({
+      id: item.id,
+      product: {
+        id: item.product_id,
+        name: item.product_name || '-',
+        images: item.image_url ? [item.image_url] : [],
+      },
+      variant: undefined,
+      quantity: item.quantity,
+      subtotal: item.total_price || 0,
+    }));
+
+    const shipping_address = {
+      recipient_name: rawOrder.shipment?.recipient_name || rawOrder.customer?.name || '-',
+      phone: rawOrder.shipment?.recipient_phone || rawOrder.customer?.phone_number || '-',
+      address: rawOrder.shipment?.address || rawOrder.customer?.address || '-',
+      city: rawOrder.shipment?.city || rawOrder.customer?.city || '-',
+      province: rawOrder.shipment?.province || rawOrder.customer?.province || '-',
+      postal_code: rawOrder.shipment?.postal_code || rawOrder.customer?.postal_code || '-',
+    };
+
+    return {
+      ...rawOrder,
+      order_number: rawOrder.order_number || rawOrder.id.slice(0, 8).toUpperCase(),
+      subtotal,
+      shipping_cost,
+      discount,
+      total,
+      items,
+      shipping_address,
+      tracking_number: rawOrder.shipment?.tracking_number || undefined,
+      payment_method: 'Midtrans / Transfer Bank',
+      payment_status: rawOrder.is_paid ? 'paid' : 'pending',
+    };
+  }, [rawOrder]);
 
   const { data: tracking } = useGet<ShipmentTracking>(
     order?.tracking_number ? `/shipments/${order.tracking_number}` : null
@@ -50,7 +94,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   if (!order) return null;
 
-  const statusColor = getOrderStatusColor(order.status as OrderStatus);
+  const statusColor = getOrderStatusColor(order.status.toLowerCase() as OrderStatus);
 
   return (
     <StorefrontLayout>
@@ -63,7 +107,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           <Divider orientation="vertical" flexItem />
           <Typography variant="h5" fontWeight={700}>Detail Pesanan #{order.order_number || '-'}</Typography>
           <Chip
-            label={getOrderStatusLabel(order.status as OrderStatus)}
+            label={getOrderStatusLabel(order.status.toLowerCase() as OrderStatus)}
             sx={{ bgcolor: `${statusColor}18`, color: statusColor, fontWeight: 700 }}
           />
         </Box>
@@ -74,7 +118,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             {/* Items */}
             <Card sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" fontWeight={700} mb={3}>Produk Dipesan</Typography>
-              {(order.items || [{ id: 1, product: { name: '-', images: [''] }, variant: { value: '-' }, quantity: 1, subtotal: 0 }]).map((item) => (
+              {(order.items || []).map((item: any) => (
                 <Box key={item.id} sx={{ display: 'flex', gap: 2, mb: 2, pb: 2, borderBottom: '1px solid #F3F4F6' }}>
                   <Box sx={{ position: 'relative', width: 72, height: 72, borderRadius: 2, overflow: 'hidden', bgcolor: '#FDFBF9', border: '1px solid rgba(235,196,184,0.15)', flexShrink: 0 }}>
                     <Image src={item.product.images?.[0] || 'https://picsum.photos/seed/food/200'} alt={item.product.name} fill style={{ objectFit: 'cover' }} />
@@ -179,9 +223,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               <Typography variant="h6" fontWeight={700} mb={2}>Metode Pembayaran</Typography>
               <Typography fontWeight={600} textTransform="capitalize">{order?.payment_method?.replace('_', ' ')}</Typography>
               <Chip
-                label={order?.payment_status === 'paid' ? 'Sudah Dibayar' : 'Belum Dibayar'}
+                label={order.is_paid ? 'Sudah Dibayar' : 'Belum Dibayar'}
                 size="small"
-                color={order?.payment_status === 'paid' ? 'success' : 'warning'}
+                color={order.is_paid ? 'success' : 'warning'}
                 sx={{ mt: 1 }}
               />
             </Card>

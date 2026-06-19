@@ -1,7 +1,9 @@
 'use client';
 
+import { TableNoRowsOverlay } from '@/components/common/DataGridOverlays';
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { apiDelete, Product, usePaginated } from '@ecommerce/api-client';
+import { useConfirm } from '@/contexts/ConfirmContext';
+import { apiDelete, Category, Product, usePaginated } from '@ecommerce/api-client';
 import { formatCurrency } from '@ecommerce/utils';
 import { Add, Delete, Edit, Search, Visibility } from '@mui/icons-material';
 import {
@@ -22,23 +24,32 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useSWRConfig } from 'swr';
-import { useConfirm } from '@/contexts/ConfirmContext';
 
 export default function ProductsPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [isActive, setIsActive] = useState('');
   const { mutate } = useSWRConfig();
   const { confirm } = useConfirm();
 
   const queryString = new URLSearchParams({
-    page: String(page + 1), per_page: '10',
-    ...(search && { q: search }),
-    ...(category && { category }),
+    page: String(page + 1),
+    limit: '10',
+    search: search,
+    category_id: category,
+    is_active: isActive,
+    is_featured: '',
+    sort_by: 'created_at',
+    sort_dir: 'desc'
   }).toString();
 
   const { data, isLoading } = usePaginated<Product>(`/admin/products?${queryString}`);
   const products = data?.data ?? [];
+
+  // Fetch all categories dynamically for the filter dropdown
+  const { data: categoriesData } = usePaginated<Category>('/admin/categories?limit=100');
+  const categoriesList = categoriesData?.data ?? [];
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
@@ -62,7 +73,13 @@ export default function ProductsPage() {
       field: 'name', headerName: 'Produk', flex: 2, minWidth: 260, display: 'flex',
       renderCell: (params: GridRenderCellParams<Product>) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-          <Avatar src={params.row.images?.[0]} variant="rounded" sx={{ width: 42, height: 42, bgcolor: '#F9F6F2' }} />
+          <Avatar
+            src={params.row.images?.[0]}
+            variant="rounded"
+            sx={{ width: 42, height: 42, bgcolor: 'primary.light', color: 'primary.main', fontWeight: 700 }}
+          >
+            {params.row.name?.[0]?.toUpperCase()}
+          </Avatar>
           <Box>
             <Typography variant="body2" fontWeight={600} noWrap>{params.row.name}</Typography>
             <Typography variant="caption" color="text.secondary">{params.row.category?.name}</Typography>
@@ -77,6 +94,10 @@ export default function ProductsPage() {
     },
     { field: 'sold_count', headerName: 'Terjual', width: 90 },
     { field: 'rating', headerName: 'Rating', width: 90, renderCell: (p) => `⭐ ${p.value?.toFixed(1)}` },
+    {
+      field: 'is_active', headerName: 'Produk Aktif', width: 120,
+      renderCell: (p) => <Chip label={p.value ? "Aktif" : "Tidak Aktif"} size="small" color={p.value ? "success" : "error"} sx={{ fontSize: '0.65rem', height: 20 }} />,
+    },
     {
       field: 'is_featured', headerName: 'Status', width: 120, display: 'flex',
       renderCell: (p) => (
@@ -103,7 +124,7 @@ export default function ProductsPage() {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box>
           <Typography variant="h5" fontWeight={700}>Manajemen Produk</Typography>
-          <Typography variant="body2" color="text.secondary">{data?.meta.total ?? 0} total produk</Typography>
+          <Typography variant="body2" color="text.secondary">{data?.meta?.total ?? 0} total produk</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button component={Link} href="/products/stock" variant="outlined" color="primary" startIcon={<Edit />}>
@@ -125,9 +146,17 @@ export default function ProductsPage() {
             <InputLabel>Kategori</InputLabel>
             <Select value={category} label="Kategori" onChange={(e) => { setCategory(e.target.value); setPage(0); }}>
               <MenuItem value="">Semua</MenuItem>
-              <MenuItem value="elektronik">Elektronik</MenuItem>
-              <MenuItem value="fashion">Fashion</MenuItem>
-              <MenuItem value="rumah">Rumah</MenuItem>
+              {categoriesList.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Produk Aktif</InputLabel>
+            <Select value={isActive} label="Produk Aktif" onChange={(e) => { setIsActive(e.target.value); setPage(0); }}>
+              <MenuItem value="">Semua</MenuItem>
+              <MenuItem value="true">Aktif</MenuItem>
+              <MenuItem value="false">Tidak Aktif</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -138,13 +167,21 @@ export default function ProductsPage() {
           rows={products}
           columns={columns}
           loading={isLoading}
-          rowCount={data?.meta.total ?? 0}
+          rowCount={data?.meta?.total ?? 0}
           paginationMode="server"
           paginationModel={{ page, pageSize: 10 }}
           onPaginationModelChange={(m) => setPage(m.page)}
           pageSizeOptions={[10]}
           rowHeight={64}
           disableRowSelectionOnClick
+          slots={{
+            noRowsOverlay: () => (
+              <TableNoRowsOverlay
+                message="Belum Ada Produk"
+                description="Belum ada produk yang ditambahkan ke inventaris toko Anda."
+              />
+            )
+          }}
           sx={{ border: 'none', minHeight: 400 }}
         />
       </Card>

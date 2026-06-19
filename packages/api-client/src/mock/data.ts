@@ -2,12 +2,12 @@ import { Address, AdminUser, Category, DashboardStats, Order, Product, Role, Shi
 
 // ─── Categories ────────────────────────────────────────────────────────────────
 export const MOCK_CATEGORIES: Category[] = [
-  { id: 'cat-1', name: 'Elektronik', slug: 'elektronik', image: 'https://picsum.photos/seed/elec/200' },
-  { id: 'cat-2', name: 'Fashion', slug: 'fashion', image: 'https://picsum.photos/seed/fash/200' },
-  { id: 'cat-3', name: 'Rumah', slug: 'rumah', image: 'https://picsum.photos/seed/home/200' },
-  { id: 'cat-4', name: 'Olahraga', slug: 'olahraga', image: 'https://picsum.photos/seed/sport/200' },
-  { id: 'cat-5', name: 'Kecantikan', slug: 'kecantikan', image: 'https://picsum.photos/seed/beauty/200' },
-  { id: 'cat-6', name: 'Makanan', slug: 'makanan', image: 'https://picsum.photos/seed/food/200' },
+  { id: 'cat-1', name: 'Elektronik', slug: 'elektronik', image_url: 'https://picsum.photos/seed/elec/200' },
+  { id: 'cat-2', name: 'Fashion', slug: 'fashion', image_url: 'https://picsum.photos/seed/fash/200' },
+  { id: 'cat-3', name: 'Rumah', slug: 'rumah', image_url: 'https://picsum.photos/seed/home/200' },
+  { id: 'cat-4', name: 'Olahraga', slug: 'olahraga', image_url: 'https://picsum.photos/seed/sport/200' },
+  { id: 'cat-5', name: 'Kecantikan', slug: 'kecantikan', image_url: 'https://picsum.photos/seed/beauty/200' },
+  { id: 'cat-6', name: 'Makanan', slug: 'makanan', image_url: 'https://picsum.photos/seed/food/200' },
 ];
 
 // ─── Products ─────────────────────────────────────────────────────────────────
@@ -18,44 +18,44 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 19999000, original_price: 22999000, discount_percentage: 13,
     stock: 45, images: ['https://picsum.photos/seed/iphone15/400/400', 'https://picsum.photos/seed/iphone15b/400/400'],
     category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['smartphone', 'apple', 'flagship'],
-    rating: 4.9, review_count: 1240, is_featured: true, is_new: true, sold_count: 342,
+    rating: 4.9, review_count: 1240, is_featured: true, is_new: true, is_active: true, sold_count: 342,
     created_at: '2024-09-20T00:00:00.000Z',
     options: [
       {
-        id: 'opt-size',
+        option_id: 'opt-size',
         name: 'Size',
         values: [
-          { id: 'val-128gb', value: '128GB' },
-          { id: 'val-256gb', value: '256GB' },
-          { id: 'val-512gb', value: '512GB' },
-          { id: 'val-1tb', value: '1TB' }
+          { option_value_id: 'val-128gb', value: '128GB' },
+          { option_value_id: 'val-256gb', value: '256GB' },
+          { option_value_id: 'val-512gb', value: '512GB' },
+          { option_value_id: 'val-1tb', value: '1TB' }
         ]
       },
       {
-        id: 'opt-color',
+        option_id: 'opt-color',
         name: 'Color',
         values: [
-          { id: 'val-red', value: 'Red' },
-          { id: 'val-black', value: 'Black' },
-          { id: 'val-blue', value: 'Blue' },
-          { id: 'val-silver', value: 'Silver' },
-          { id: 'val-orange', value: 'Orange' }
+          { option_value_id: 'val-red', value: 'Red' },
+          { option_value_id: 'val-black', value: 'Black' },
+          { option_value_id: 'val-blue', value: 'Blue' },
+          { option_value_id: 'val-silver', value: 'Silver' },
+          { option_value_id: 'val-orange', value: 'Orange' }
         ]
       }
     ],
     skus: [
       // 256GB SKUs
-      { id: 'sku-iphone-256-red', sku: 'IPH15P-256-RED', price: 19999000, stock: 10, picture: 'https://picsum.photos/seed/iphone15red/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-red' } },
-      { id: 'sku-iphone-256-blk', sku: 'IPH15P-256-BLK', price: 19999000, stock: 15, picture: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-black' } },
-      { id: 'sku-iphone-256-blu', sku: 'IPH15P-256-BLU', price: 20199000, stock: 5, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-blue' } },
+      { id: 'sku-1', sku_id: 'sku-iphone-256-red', sku: 'IPH15P-256-RED', price: 19999000, stock: 10, image_url: 'https://picsum.photos/seed/iphone15red/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-red' } },
+      { id: 'sku-2', sku_id: 'sku-iphone-256-blk', sku: 'IPH15P-256-BLK', price: 19999000, stock: 15, image_url: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-black' } },
+      { id: 'sku-3', sku_id: 'sku-iphone-256-blu', sku: 'IPH15P-256-BLU', price: 20199000, stock: 5, image_url: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-256gb', 'opt-color': 'val-blue' } },
       // 512GB SKUs
-      { id: 'sku-iphone-512-red', sku: 'IPH15P-512-RED', price: 22999000, stock: 8, picture: 'https://picsum.photos/seed/iphone15red/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-red' } },
-      { id: 'sku-iphone-512-blk', sku: 'IPH15P-512-BLK', price: 22999000, stock: 12, picture: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-black' } },
-      { id: 'sku-iphone-512-blu', sku: 'IPH15P-512-BLU', price: 23199000, stock: 6, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-blue' } },
+      { id: 'sku-4', sku_id: 'sku-iphone-512-red', sku: 'IPH15P-512-RED', price: 22999000, stock: 8, image_url: 'https://picsum.photos/seed/iphone15red/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-red' } },
+      { id: 'sku-5', sku_id: 'sku-iphone-512-blk', sku: 'IPH15P-512-BLK', price: 22999000, stock: 12, image_url: 'https://picsum.photos/seed/iphone15black/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-black' } },
+      { id: 'sku-6', sku_id: 'sku-iphone-512-blu', sku: 'IPH15P-512-BLU', price: 23199000, stock: 6, image_url: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-512gb', 'opt-color': 'val-blue' } },
       // 1TB SKUs
-      { id: 'sku-iphone-1tb-blu', sku: 'IPH15P-1TB-BLU', price: 26999000, original_price: 28999000, stock: 0, picture: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-blue' } },
-      { id: 'sku-iphone-1tb-slv', sku: 'IPH15P-1TB-SLV', price: 26999000, original_price: 28999000, stock: 4, picture: 'https://picsum.photos/seed/iphone15silver/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-silver' } },
-      { id: 'sku-iphone-1tb-org', sku: 'IPH15P-1TB-ORG', price: 27499000, original_price: 29499000, stock: 3, picture: 'https://picsum.photos/seed/iphone15orange/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-orange' } }
+      { id: 'sku-7', sku_id: 'sku-iphone-1tb-blu', sku: 'IPH15P-1TB-BLU', price: 26999000, original_price: 28999000, stock: 0, image_url: 'https://picsum.photos/seed/iphone15blue/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-blue' } },
+      { id: 'sku-8', sku_id: 'sku-iphone-1tb-slv', sku: 'IPH15P-1TB-SLV', price: 26999000, original_price: 28999000, stock: 4, image_url: 'https://picsum.photos/seed/iphone15silver/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-silver' } },
+      { id: 'sku-9', sku_id: 'sku-iphone-1tb-org', sku: 'IPH15P-1TB-ORG', price: 27499000, original_price: 29499000, stock: 3, image_url: 'https://picsum.photos/seed/iphone15orange/400/400', option_values_map: { 'opt-size': 'val-1tb', 'opt-color': 'val-orange' } }
     ]
   },
   {
@@ -64,7 +64,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 18500000, original_price: 20000000, discount_percentage: 8,
     stock: 32, images: ['https://picsum.photos/seed/s24/400/400'],
     category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['smartphone', 'samsung', 'android'],
-    rating: 4.8, review_count: 892, is_featured: true, is_new: true, sold_count: 289,
+    rating: 4.8, review_count: 892, is_featured: true, is_new: true, is_active: true, sold_count: 289,
     created_at: '2024-01-17T00:00:00.000Z',
   },
   {
@@ -73,7 +73,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 16999000, original_price: undefined, discount_percentage: undefined,
     stock: 18, images: ['https://picsum.photos/seed/macbook/400/400'],
     category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['laptop', 'apple', 'macbook'],
-    rating: 4.9, review_count: 567, is_featured: true, is_new: false, sold_count: 124,
+    rating: 4.9, review_count: 567, is_featured: true, is_new: false, is_active: true, sold_count: 124,
     created_at: '2024-03-08T00:00:00.000Z',
   },
   {
@@ -82,7 +82,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 1899000, original_price: 2199000, discount_percentage: 14,
     stock: 120, images: ['https://picsum.photos/seed/nike270/400/400'],
     category: MOCK_CATEGORIES[3], categories: [MOCK_CATEGORIES[3]], tags: ['sepatu', 'nike', 'olahraga'],
-    rating: 4.7, review_count: 3210, is_featured: true, is_new: false, sold_count: 890,
+    rating: 4.7, review_count: 3210, is_featured: true, is_new: false, is_active: true, sold_count: 890,
     created_at: '2023-06-15T00:00:00.000Z',
   },
   {
@@ -91,7 +91,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 8999000, original_price: 10500000, discount_percentage: 14,
     stock: 24, images: ['https://picsum.photos/seed/dyson/400/400'],
     category: MOCK_CATEGORIES[2], categories: [MOCK_CATEGORIES[2]], tags: ['vacuum', 'dyson', 'rumah'],
-    rating: 4.8, review_count: 428, is_featured: false, is_new: true, sold_count: 76,
+    rating: 4.8, review_count: 428, is_featured: false, is_new: true, is_active: true, sold_count: 76,
     created_at: '2024-04-10T00:00:00.000Z',
   },
   {
@@ -100,7 +100,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 9999000, original_price: 12999000, discount_percentage: 23,
     stock: 15, images: ['https://picsum.photos/seed/samsungtv/400/400'],
     category: MOCK_CATEGORIES[2], categories: [MOCK_CATEGORIES[2]], tags: ['tv', 'samsung', 'smart-tv'],
-    rating: 4.6, review_count: 312, is_featured: false, is_new: false, sold_count: 98,
+    rating: 4.6, review_count: 312, is_featured: false, is_new: false, is_active: true, sold_count: 98,
     created_at: '2023-11-01T00:00:00.000Z',
   },
   {
@@ -109,7 +109,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 2299000, original_price: 2799000, discount_percentage: 18,
     stock: 65, images: ['https://picsum.photos/seed/adidas/400/400'],
     category: MOCK_CATEGORIES[3], categories: [MOCK_CATEGORIES[3]], tags: ['sepatu', 'adidas', 'running'],
-    rating: 4.6, review_count: 1870, is_featured: false, is_new: true, sold_count: 445,
+    rating: 4.6, review_count: 1870, is_featured: false, is_new: true, is_active: true, sold_count: 445,
     created_at: '2024-02-14T00:00:00.000Z',
   },
   {
@@ -118,7 +118,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 349000, original_price: 429000, discount_percentage: 19,
     stock: 200, images: ['https://picsum.photos/seed/loreal/400/400'],
     category: MOCK_CATEGORIES[4], categories: [MOCK_CATEGORIES[4]], tags: ['skincare', 'serum', 'vitamin-c'],
-    rating: 4.5, review_count: 5620, is_featured: false, is_new: true, sold_count: 2100,
+    rating: 4.5, review_count: 5620, is_featured: false, is_new: true, is_active: true, sold_count: 2100,
     created_at: '2024-05-01T00:00:00.000Z',
   },
   {
@@ -127,7 +127,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 5499000, original_price: 6500000, discount_percentage: 15,
     stock: 38, images: ['https://picsum.photos/seed/sony/400/400'],
     category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['headphone', 'sony', 'audio'],
-    rating: 4.9, review_count: 2100, is_featured: true, is_new: false, sold_count: 318,
+    rating: 4.9, review_count: 2100, is_featured: true, is_new: false, is_active: true, sold_count: 318,
     created_at: '2023-09-05T00:00:00.000Z',
   },
   {
@@ -136,7 +136,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 17499000, original_price: undefined, discount_percentage: undefined,
     stock: 22, images: ['https://picsum.photos/seed/ipadpro/400/400'],
     category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['tablet', 'apple', 'ipad'],
-    rating: 4.8, review_count: 340, is_featured: true, is_new: true, sold_count: 89,
+    rating: 4.8, review_count: 340, is_featured: true, is_new: true, is_active: true, sold_count: 89,
     created_at: '2024-05-15T00:00:00.000Z',
   },
   {
@@ -145,7 +145,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 4299000, original_price: 5000000, discount_percentage: 14,
     stock: 50, images: ['https://picsum.photos/seed/bose/400/400'],
     category: MOCK_CATEGORIES[0], categories: [MOCK_CATEGORIES[0]], tags: ['headphone', 'bose', 'anc'],
-    rating: 4.7, review_count: 980, is_featured: false, is_new: false, sold_count: 210,
+    rating: 4.7, review_count: 980, is_featured: false, is_new: false, is_active: true, sold_count: 210,
     created_at: '2023-07-20T00:00:00.000Z',
   },
   {
@@ -154,7 +154,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 1299000, original_price: 1599000, discount_percentage: 19,
     stock: 80, images: ['https://picsum.photos/seed/instantpot/400/400'],
     category: MOCK_CATEGORIES[2], categories: [MOCK_CATEGORIES[2]], tags: ['dapur', 'cooker', 'rumah'],
-    rating: 4.6, review_count: 1540, is_featured: false, is_new: false, sold_count: 320,
+    rating: 4.6, review_count: 1540, is_featured: false, is_new: false, is_active: true, sold_count: 320,
     created_at: '2023-05-10T00:00:00.000Z',
   },
   {
@@ -163,44 +163,53 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 349000, original_price: 399000, discount_percentage: 12,
     stock: 50, images: ['https://picsum.photos/seed/sweater1/400/400', 'https://picsum.photos/seed/sweater2/400/400'],
     category: MOCK_CATEGORIES[1], categories: [MOCK_CATEGORIES[1], MOCK_CATEGORIES[3]], tags: ['sweater', 'running', 'fashion', 'sport'],
-    rating: 4.8, review_count: 86, is_featured: true, is_new: true, sold_count: 24,
+    rating: 4.8, review_count: 86, is_featured: true, is_new: true, is_active: true, sold_count: 24,
     created_at: '2024-05-01T00:00:00.000Z',
     options: [
       {
-        id: 'opt-color',
+        option_id: 'opt-color',
         name: 'Color',
         values: [
-          { id: 'val-black', value: 'Black' },
-          { id: 'val-blue', value: 'Blue' }
+          { option_value_id: 'val-black', value: 'Black' },
+          { option_value_id: 'val-blue', value: 'Blue' }
         ]
       },
       {
-        id: 'opt-size',
+        option_id: 'opt-size',
         name: 'Size',
         values: [
-          { id: 'val-s', value: 'S' },
-          { id: 'val-m', value: 'M' },
-          { id: 'val-l', value: 'L' }
+          { option_value_id: 'val-s', value: 'S' },
+          { option_value_id: 'val-m', value: 'M' },
+          { option_value_id: 'val-l', value: 'L' }
         ]
       }
     ],
     skus: [
-      { id: 'sku-blk-s', sku: 'SWTR-BLK-S', price: 349000, stock: 10, picture: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-s' } },
-      { id: 'sku-blk-m', sku: 'SWTR-BLK-M', price: 349000, stock: 15, picture: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-m' } },
-      { id: 'sku-blk-l', sku: 'SWTR-BLK-L', price: 369000, stock: 5, picture: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-l' } },
-      { id: 'sku-blu-s', sku: 'SWTR-BLU-S', price: 359000, stock: 8, picture: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-s' } },
-      { id: 'sku-blu-m', sku: 'SWTR-BLU-M', price: 359000, stock: 7, picture: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-m' } },
-      { id: 'sku-blu-l', sku: 'SWTR-BLU-L', price: 379000, stock: 5, picture: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-l' } }
+      { id: 'sku-10', sku_id: 'sku-blk-s', sku: 'SWTR-BLK-S', price: 349000, stock: 10, image_url: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-s' } },
+      { id: 'sku-11', sku_id: 'sku-blk-m', sku: 'SWTR-BLK-M', price: 349000, stock: 15, image_url: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-m' } },
+      { id: 'sku-12', sku_id: 'sku-blk-l', sku: 'SWTR-BLK-L', price: 369000, stock: 5, image_url: 'https://picsum.photos/seed/sweaterblack/400/400', option_values_map: { 'opt-color': 'val-black', 'opt-size': 'val-l' } },
+      { id: 'sku-13', sku_id: 'sku-blu-s', sku: 'SWTR-BLU-S', price: 359000, stock: 8, image_url: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-s' } },
+      { id: 'sku-14', sku_id: 'sku-blu-m', sku: 'SWTR-BLU-M', price: 359000, stock: 7, image_url: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-m' } },
+      { id: 'sku-15', sku_id: 'sku-blu-l', sku: 'SWTR-BLU-L', price: 379000, stock: 5, image_url: 'https://picsum.photos/seed/sweaterblue/400/400', option_values_map: { 'opt-color': 'val-blue', 'opt-size': 'val-l' } }
     ]
   }
 ];
 
 // ─── Addresses ────────────────────────────────────────────────────────────────
-export const MOCK_ADDRESS: Address = {
-  id: 'addr-1', label: 'Rumah', recipient_name: 'Muhammad Azhar',
-  phone: '081234567890', address: 'Jl. Merdeka No. 10 RT 01/RW 02',
-  city: 'Jakarta Selatan', province: 'DKI Jakarta', postal_code: '12110', is_default: true,
-};
+export const MOCK_ADDRESSES: Address[] = [
+  {
+    id: 'addr-1', label: 'Rumah', recipient_name: 'Muhammad Azhar',
+    recipient_phone: '081234567890', address: 'Jl. Merdeka No. 10 RT 01/RW 02',
+    city: 'Jakarta Selatan', city_id: 'city-136', province: 'DKI Jakarta', province_id: 'prov-10', district: 'Kebayoran Baru', district_id: 'dist-1331', subdistrict: 'Selong', subdistrict_id: 'sub-17590', postal_code: '12110', is_main: true,
+  },
+  {
+    id: 'addr-2', label: 'Kantor', recipient_name: 'Muhammad Azhar (Rakamir)',
+    recipient_phone: '089876543210', address: 'Menara Rakamir Lt. 21, Jl. Sudirman Kav 21',
+    city: 'Jakarta Pusat', city_id: 'city-137', province: 'DKI Jakarta', province_id: 'prov-10', district: 'Menteng', district_id: 'dist-1339', subdistrict: 'Cikini', subdistrict_id: 'sub-17591', postal_code: '10210', is_main: false,
+  }
+];
+
+export const MOCK_ADDRESS: Address = MOCK_ADDRESSES[0];
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 export const MOCK_ORDERS: Order[] = [
@@ -256,8 +265,8 @@ export const MOCK_ORDERS: Order[] = [
 // ─── Tracking ─────────────────────────────────────────────────────────────────
 export const MOCK_TRACKING: Record<string, ShipmentTracking> = {
   'JNE-1234567890': {
-    tracking_number: 'JNE-1234567890', courier: 'JNE Express', status: 'delivered',
-    estimated_delivery: '3 Mei 2024',
+    tracking_number: 'JNE-1234567890', courier_name: 'JNE Express', status: 'delivered',
+    estimated_delivery_date: '3 Mei 2024',
     events: [
       { timestamp: '2024-05-03T16:00:00.000Z', location: 'Jakarta Selatan', description: 'Paket telah diterima oleh penerima', status: 'delivered' },
       { timestamp: '2024-05-03T09:30:00.000Z', location: 'Jakarta Selatan', description: 'Paket dalam perjalanan ke tujuan', status: 'in_transit' },
@@ -266,8 +275,8 @@ export const MOCK_TRACKING: Record<string, ShipmentTracking> = {
     ],
   },
   'SICEPAT-9876543210': {
-    tracking_number: 'SICEPAT-9876543210', courier: 'SiCepat Ekspress', status: 'shipped',
-    estimated_delivery: '13 Mei 2024',
+    tracking_number: 'SICEPAT-9876543210', courier_name: 'SiCepat Ekspress', status: 'shipped',
+    estimated_delivery_date: '13 Mei 2024',
     events: [
       { timestamp: '2024-05-11T09:00:00.000Z', location: 'Cabang SiCepat Jakarta Selatan', description: 'Kurir sedang mengantar paket', status: 'in_transit' },
       { timestamp: '2024-05-11T06:00:00.000Z', location: 'Hub SiCepat Cilincing', description: 'Paket tiba di Jakarta', status: 'in_transit' },
@@ -279,29 +288,29 @@ export const MOCK_TRACKING: Record<string, ShipmentTracking> = {
 
 // ─── Customers ────────────────────────────────────────────────────────────────
 export const MOCK_CUSTOMERS: User[] = [
-  { id: 'u-1', name: 'Muhammad Azhar Iskandar', email: 'azhar@example.com', phone: '081234567890', created_at: '2024-01-15T00:00:00.000Z' },
-  { id: 'u-2', name: 'Budi Santoso', email: 'budi@example.com', phone: '082345678901', created_at: '2024-02-20T00:00:00.000Z' },
-  { id: 'u-3', name: 'Siti Rahayu', email: 'siti@example.com', phone: '083456789012', created_at: '2024-03-05T00:00:00.000Z' },
-  { id: 'u-4', name: 'Dewi Kusuma', email: 'dewi@example.com', phone: '084567890123', created_at: '2024-03-22T00:00:00.000Z' },
-  { id: 'u-5', name: 'Rudi Hartono', email: 'rudi@example.com', phone: '085678901234', created_at: '2024-04-01T00:00:00.000Z' },
-  { id: 'u-6', name: 'Anita Wijaya', email: 'anita@example.com', phone: '086789012345', created_at: '2024-04-15T00:00:00.000Z' },
+  { id: 'u-1', full_name: 'Muhammad Azhar Iskandar', email: 'azhar@example.com', phone: '081234567890', created_at: '2024-01-15T00:00:00.000Z' },
+  { id: 'u-2', full_name: 'Budi Santoso', email: 'budi@example.com', phone: '082345678901', created_at: '2024-02-20T00:00:00.000Z' },
+  { id: 'u-3', full_name: 'Siti Rahayu', email: 'siti@example.com', phone: '083456789012', created_at: '2024-03-05T00:00:00.000Z' },
+  { id: 'u-4', full_name: 'Dewi Kusuma', email: 'dewi@example.com', phone: '084567890123', created_at: '2024-03-22T00:00:00.000Z' },
+  { id: 'u-5', full_name: 'Rudi Hartono', email: 'rudi@example.com', phone: '085678901234', created_at: '2024-04-01T00:00:00.000Z' },
+  { id: 'u-6', full_name: 'Anita Wijaya', email: 'anita@example.com', phone: '086789012345', created_at: '2024-04-15T00:00:00.000Z' },
 ];
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
 export const MOCK_ROLES: Role[] = [
-  { id: 'r-1', name: 'Super Admin', slug: 'superadmin', permissions: ['products:read', 'products:write', 'orders:read', 'orders:write', 'customers:read', 'customers:write', 'reports:read', 'roles:read', 'roles:write', 'users:read', 'users:write'] },
-  { id: 'r-2', name: 'Product Manager', slug: 'product_manager', permissions: ['products:read', 'products:write', 'customers:read'] },
-  { id: 'r-3', name: 'Order Manager', slug: 'order_manager', permissions: ['orders:read', 'orders:write', 'customers:read'] },
-  { id: 'r-4', name: 'Customer Service', slug: 'customer_service', permissions: ['customers:read', 'customers:write', 'orders:read'] },
-  { id: 'r-5', name: 'Finance', slug: 'finance', permissions: ['reports:read', 'orders:read'] },
+  { id: 'r-1', name: 'Super Admin', login_scope: 'superadmin', permissions: ['products:read', 'products:write', 'orders:read', 'orders:write', 'customers:read', 'customers:write', 'reports:read', 'roles:read', 'roles:write', 'users:read', 'users:write'] },
+  { id: 'r-2', name: 'Product Manager', login_scope: 'product_manager', permissions: ['products:read', 'products:write', 'customers:read'] },
+  { id: 'r-3', name: 'Order Manager', login_scope: 'order_manager', permissions: ['orders:read', 'orders:write', 'customers:read'] },
+  { id: 'r-4', name: 'Customer Service', login_scope: 'customer_service', permissions: ['customers:read', 'customers:write', 'orders:read'] },
+  { id: 'r-5', name: 'Finance', login_scope: 'finance', permissions: ['reports:read', 'orders:read'] },
 ];
 
 // ─── Admin Users ──────────────────────────────────────────────────────────────
 export const MOCK_ADMIN_USERS: AdminUser[] = [
-  { id: 'a-1', name: 'Muhammad Azhar Iskandar', email: 'azhar@rakamir.id', role: MOCK_ROLES[0], is_active: true, created_at: '2024-01-01T00:00:00.000Z' },
-  { id: 'a-2', name: 'Rina Produk', email: 'rina@rakamir.id', role: MOCK_ROLES[1], is_active: true, created_at: '2024-02-01T00:00:00.000Z' },
-  { id: 'a-3', name: 'Doni Order', email: 'doni@rakamir.id', role: MOCK_ROLES[2], is_active: true, created_at: '2024-03-01T00:00:00.000Z' },
-  { id: 'a-4', name: 'Lisa CS', email: 'lisa@rakamir.id', role: MOCK_ROLES[3], is_active: false, created_at: '2024-04-01T00:00:00.000Z' },
+  { id: 'a-1', name: 'Muhammad Azhar Iskandar', email: 'azhar@rakamir.id', role: MOCK_ROLES[0], status: "active", created_at: '2024-01-01T00:00:00.000Z' },
+  { id: 'a-2', name: 'Rina Produk', email: 'rina@rakamir.id', role: MOCK_ROLES[1], status: "active", created_at: '2024-02-01T00:00:00.000Z' },
+  { id: 'a-3', name: 'Doni Order', email: 'doni@rakamir.id', role: MOCK_ROLES[2], status: "active", created_at: '2024-03-01T00:00:00.000Z' },
+  { id: 'a-4', name: 'Lisa CS', email: 'lisa@rakamir.id', role: MOCK_ROLES[3], status: "inactive", created_at: '2024-04-01T00:00:00.000Z' },
 ];
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────

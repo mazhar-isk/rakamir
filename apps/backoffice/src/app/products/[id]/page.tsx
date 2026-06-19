@@ -1,6 +1,7 @@
 'use client';
 
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
+import { useConfirm } from '@/contexts/ConfirmContext';
 import { apiDelete, Product, useGet } from '@ecommerce/api-client';
 import { formatCurrency, formatDate } from '@ecommerce/utils';
 import {
@@ -8,8 +9,7 @@ import {
   Delete,
   Edit,
   Inventory2,
-  LocalOffer,
-  Star,
+  LocalOffer
 } from '@mui/icons-material';
 import {
   Avatar,
@@ -21,22 +21,102 @@ import {
   Grid,
   IconButton,
   Skeleton,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
+import chroma from 'chroma-js';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useConfirm } from '@/contexts/ConfirmContext';
+
+const getColorCode = (colorName: string): string => {
+  const clean = colorName.trim().toLowerCase();
+  const indonesianColors: Record<string, string> = {
+    merah: 'red',
+    biru: 'blue',
+    hijau: 'green',
+    kuning: 'yellow',
+    hitam: '#1f2937',
+    putih: '#ffffff',
+    abu: '#9ca3af',
+    'abu-abu': '#9ca3af',
+    cokelat: '#8c6239',
+    coklat: '#8c6239',
+    ungu: 'purple',
+    oranye: 'orange',
+    jingga: 'orange',
+    pink: 'pink',
+    'merah muda': 'pink',
+    emas: '#d4af37',
+    perak: '#c0c0c0',
+    tembaga: '#b87333',
+    tosca: '#30d5c8',
+    mocca: '#a38068',
+    moka: '#a38068',
+    cream: '#fffdd0',
+    krim: '#fffdd0',
+    mustard: '#e1ad01',
+    navy: '#000080',
+    maroon: '#800000',
+    peach: '#ffe5b4',
+    khaki: '#f0e68c',
+    denim: '#1560bd',
+  };
+
+  if (indonesianColors[clean]) {
+    return indonesianColors[clean];
+  }
+
+  const parts = clean.split(/\s+/);
+  if (parts.length > 1) {
+    const baseColor = parts[0];
+    const modifier = parts[1];
+    const baseEng = indonesianColors[baseColor] || baseColor;
+
+    if (baseEng.startsWith('#')) {
+      return baseEng;
+    }
+
+    if (modifier === 'tua') {
+      if (baseEng === 'purple') return 'indigo';
+      return `dark${baseEng}`;
+    }
+    if (modifier === 'muda') {
+      if (baseEng === 'red') return 'lightcoral';
+      if (baseEng === 'purple') return 'violet';
+      return `light${baseEng}`;
+    }
+  }
+
+  if (chroma.valid(clean)) {
+    return clean;
+  }
+
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash % 360);
+  const s = 45 + Math.abs((hash >> 8) % 25);
+  const l = 40 + Math.abs((hash >> 16) % 20);
+  return `hsl(${h}, ${s}%, ${l}%)`;
+};
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { data: product, isLoading } = useGet<Product>(`/admin/products/${params.id}`);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [imageError, setImageError] = useState(false);
   const { confirm } = useConfirm();
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+
+  // Reset image error when selected image index changes
+  useEffect(() => {
+    setImageError(false);
+  }, [selectedImage]);
 
   // Initialize selected options when product loads
   useEffect(() => {
@@ -44,7 +124,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       const initial: Record<string, string> = {};
       product.options.forEach((opt) => {
         if (opt.values && opt.values.length > 0) {
-          initial[opt.id] = opt.values[0].id;
+          initial[opt.option_id] = opt.values[0].option_value_id;
         }
       });
       setSelectedOptions(initial);
@@ -70,7 +150,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const images = useMemo(() => {
     const productImages = product?.images?.length ? product.images : ['https://picsum.photos/seed/placeholder/400/400'];
     const skuPictures = product?.skus
-      ?.map((sku) => sku.picture)
+      ?.map((sku) => sku.image_url)
       .filter((pic): pic is string => !!pic) || [];
     const uniqueSkuPictures = Array.from(new Set(skuPictures)).filter((pic) => !productImages.includes(pic));
     return [...productImages, ...uniqueSkuPictures];
@@ -78,15 +158,15 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   // Synchronize selectedImage when active SKU picture changes (from selector clicks)
   useEffect(() => {
-    if (activeSku?.picture) {
-      const idx = images.indexOf(activeSku.picture);
+    if (activeSku?.image_url) {
+      const idx = images.indexOf(activeSku.image_url);
       if (idx !== -1) {
         setSelectedImage(idx);
       }
     } else {
       setSelectedImage(0);
     }
-  }, [activeSku?.picture, images]);
+  }, [activeSku?.image_url, images]);
 
   // Check if an option value is disabled in the current selection context
   const isOptionValueDisabled = (optionId: string, valueId: string) => {
@@ -94,9 +174,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     const testSelection = { ...selectedOptions, [optionId]: valueId };
     return !product.skus.some((sku) => {
       if (!sku.option_values_map) return false;
-      return Object.entries(testSelection).every(([oId, vId]) => {
-        return sku.option_values_map[oId] === vId;
-      });
+      return (
+        sku.stock > 0 &&
+        Object.entries(testSelection).every(([oId, vId]) => {
+          return sku.option_values_map[oId] === vId;
+        })
+      );
     });
   };
 
@@ -105,7 +188,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       const next = { ...prev, [optionId]: valueId };
       if (product?.skus) {
         // Check if the new combination matches a SKU
-        const sku = product.skus.find((s) => 
+        const sku = product.skus.find((s) =>
           Object.entries(next).every(([oId, vId]) => s.option_values_map?.[oId] === vId)
         );
         if (sku) {
@@ -126,7 +209,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     setSelectedImage(index);
     const clickedImage = images[index];
     if (product?.skus) {
-      const matchingSku = product.skus.find((s) => s.picture === clickedImage);
+      const matchingSku = product.skus.find((s) => s.image_url === clickedImage);
       if (matchingSku && matchingSku.option_values_map) {
         setSelectedOptions(matchingSku.option_values_map);
       }
@@ -192,9 +275,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <IconButton component={Link} href="/products"><ArrowBack /></IconButton>
           <Box>
-            <Typography variant="h5" fontWeight={700}>{product.name}</Typography>
+            <Stack direction="row" gap={2} alignItems="center">
+              <Typography variant="h5" fontWeight={700}>{product.name}</Typography>
+              <Chip label={product.is_active ? "Aktif" : "Tidak Aktif"} size="small" color={product.is_active ? 'success' : 'error'} sx={{ fontWeight: 600, fontSize: '0.72rem' }} />
+            </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-              ID: {product.id} · Slug: {product.slug}
+              ID: {product.id}
             </Typography>
           </Box>
         </Box>
@@ -228,12 +314,30 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 bgcolor: '#F9F6F2', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2,
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={images[selectedImage] || 'https://picsum.photos/seed/placeholder/400/400'}
-                alt={product.name}
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
+              {imageError || !images[selectedImage] ? (
+                <Avatar
+                  variant="rounded"
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 0,
+                    fontSize: '4rem',
+                    bgcolor: 'primary.light',
+                    color: 'primary.main',
+                    fontWeight: 700
+                  }}
+                >
+                  {product.name?.[0]?.toUpperCase()}
+                </Avatar>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={images[selectedImage]}
+                  alt={product.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  onError={() => setImageError(true)}
+                />
+              )}
             </Box>
             {/* Thumbnails */}
             {images.length > 1 && (
@@ -249,8 +353,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                       border: i === selectedImage ? '2px solid #D26B54' : '2px solid transparent',
                       transition: 'border-color 0.2s',
                       '&:hover': { borderColor: '#EBC4B8' },
+                      bgcolor: 'primary.light',
+                      color: 'primary.main',
+                      fontWeight: 700
                     }}
-                  />
+                  >
+                    {product.name?.[0]?.toUpperCase()}
+                  </Avatar>
                 ))}
               </Box>
             )}
@@ -314,34 +423,24 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                   Pilihan Varian
                 </Typography>
                 {product.options.map((opt) => (
-                  <Box key={opt.id} sx={{ mb: 2 }}>
+                  <Box key={opt.option_id} sx={{ mb: 2 }}>
                     <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.8rem' }}>
-                      {opt.name}: <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>{opt.values?.find(v => v.id === selectedOptions[opt.id])?.value}</Box>
+                      {opt.name}: <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>{opt.values?.find(v => v.option_value_id === selectedOptions[opt.option_id])?.value}</Box>
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       {opt.values?.map((val) => {
-                        const isSelected = selectedOptions[opt.id] === val.id;
-                        const isDisabled = isOptionValueDisabled(opt.id, val.id);
+                        const isSelected = selectedOptions[opt.option_id] === val.option_value_id;
+                        const isDisabled = isOptionValueDisabled(opt.option_id, val.option_value_id);
                         const isColor = opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'warna';
-                        
+
                         if (isColor) {
-                          const colorHexMap: Record<string, string> = {
-                            black: '#1f2937',
-                            blue: '#3b82f6',
-                            red: '#ef4444',
-                            green: '#10b981',
-                            white: '#ffffff',
-                            gray: '#9ca3af',
-                            silver: '#e5e7eb',
-                            gold: '#f59e0b',
-                            orange: '#f97316',
-                          };
-                          const hex = colorHexMap[val.value.toLowerCase()] || '#cccccc';
-                          
+                          const hex = getColorCode(val.value);
+                          const isLight = chroma.valid(hex) ? chroma(hex).luminance() > 0.5 : false;
+
                           return (
                             <Box
-                              key={val.id}
-                              onClick={() => handleOptionChange(opt.id, val.id)}
+                              key={val.option_value_id}
+                              onClick={() => handleOptionChange(opt.option_id, val.option_value_id)}
                               sx={{
                                 width: 28,
                                 height: 28,
@@ -358,22 +457,22 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 '&:hover': { transform: 'scale(1.1)' }
                               }}
                             >
-                              {val.value.toLowerCase() === 'white' && isSelected && (
+                              {isLight && isSelected && (
                                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#000000' }} />
                               )}
-                              {val.value.toLowerCase() !== 'white' && isSelected && (
+                              {!isLight && isSelected && (
                                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ffffff' }} />
                               )}
                             </Box>
                           );
                         }
-                        
+
                         return (
                           <Chip
-                            key={val.id}
+                            key={val.option_value_id}
                             label={val.value}
                             size="small"
-                            onClick={() => handleOptionChange(opt.id, val.id)}
+                            onClick={() => handleOptionChange(opt.option_id, val.option_value_id)}
                             color={isSelected ? 'primary' : 'default'}
                             variant={isSelected ? 'filled' : 'outlined'}
                             sx={{
@@ -422,14 +521,16 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           <Card sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" fontWeight={700} mb={2}>Informasi</Typography>
             {[
-              { label: 'Kategori', value: product.category?.name ?? '-' },
-              { label: 'Rating', value: (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Star sx={{ fontSize: 16, color: '#F59E0B' }} />
-                  <Typography fontWeight={600}>{product.rating}</Typography>
-                  <Typography variant="caption" color="text.secondary">({product.review_count} ulasan)</Typography>
-                </Box>
-              )},
+              { label: 'Kategori', value: (product.categories || []).map((cat) => cat.name).join(', ') || '-' },
+              // {
+              //   label: 'Rating', value: (
+              //     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              //       <Star sx={{ fontSize: 16, color: '#F59E0B' }} />
+              //       <Typography fontWeight={600}>{product.rating}</Typography>
+              //       <Typography variant="caption" color="text.secondary">({product.review_count} ulasan)</Typography>
+              //     </Box>
+              //   )
+              // },
               { label: 'Ditambahkan', value: formatDate(product.created_at) },
             ].map(({ label, value }) => (
               <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>

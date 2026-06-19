@@ -3,13 +3,27 @@
 import { ReactNode, useState } from 'react';
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, createTheme } from '@mui/material';
 import { useServerInsertedHTML } from 'next/navigation';
 import { backofficeTheme } from '@ecommerce/ui';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
 import { ConfirmProvider } from '@/contexts/ConfirmContext';
+import { TableSkeletonLoadingOverlay, TableNoRowsOverlay } from '@/components/common/DataGridOverlays';
+
+const customTheme = createTheme(backofficeTheme, {
+  components: {
+    MuiDataGrid: {
+      defaultProps: {
+        slots: {
+          loadingOverlay: TableSkeletonLoadingOverlay,
+          noRowsOverlay: TableNoRowsOverlay,
+        },
+      },
+    },
+  },
+});
 
 function ThemeRegistry({ children }: { children: ReactNode }) {
   const [{ cache, flush }] = useState(() => {
@@ -40,7 +54,7 @@ function ThemeRegistry({ children }: { children: ReactNode }) {
 export default function BackofficeProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeRegistry>
-      <ThemeProvider theme={backofficeTheme}>
+      <ThemeProvider theme={customTheme}>
         <CssBaseline />
         <AdminAuthProvider>
           <ConfirmProvider>

@@ -2,16 +2,21 @@
 
 import ProductCard from '@/components/product/ProductCard';
 import { PaginatedResponse, Product, useGet } from '@ecommerce/api-client';
+import { useIntersection } from '@/hooks/useIntersection';
 import { NewReleases } from '@mui/icons-material';
 import { Box, Button, Container, Grid, Skeleton, Typography } from '@mui/material';
 import Link from 'next/link';
 
 export default function NewArrivalsSection() {
-  const { data, isLoading } = useGet<PaginatedResponse<Product>>('/products?is_new=true&per_page=8');
+  const [ref, isIntersecting] = useIntersection();
+  const { data, isLoading: apiLoading } = useGet<PaginatedResponse<Product>>(
+    isIntersecting ? '/products?is_new=true&per_page=8' : null
+  );
   const products = data?.data ?? [];
+  const isLoading = apiLoading || !isIntersecting;
 
   return (
-    <Box sx={{ py: 10, bgcolor: '#F9F6F2' }}>
+    <Box ref={ref} sx={{ py: 10, bgcolor: '#F9F6F2' }}>
       <Container maxWidth="lg">
         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 6 }}>
           <Box>
@@ -35,7 +40,7 @@ export default function NewArrivalsSection() {
               fontWeight={700}
               sx={{ 
                 color: '#2E2A27', 
-                fontFamily: '"Outfit", "Inter", sans-serif',
+                fontFamily: '"Playfair Display", serif',
                 letterSpacing: '-0.02em'
               }}
             >

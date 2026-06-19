@@ -6,7 +6,6 @@ import FeaturedSection from './_components/FeaturedSection';
 import HeroSection from './_components/HeroSection';
 import NewArrivalsSection from './_components/NewArrivalsSection';
 import PromoSection from './_components/PromoSection';
-import TestimonialsSection from './_components/TestimonialsSection';
 
 export const metadata: Metadata = {
   title: 'Rakamir Webstore — Belanja Online Terpercaya',
@@ -35,7 +34,7 @@ export default function HomePage() {
       <BestSellersSection />
 
       {/* 7. Testimonials */}
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
 
       {/* 8. Newsletter */}
       {/* <NewsletterSection /> */}
