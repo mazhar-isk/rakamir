@@ -217,18 +217,18 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
   }
 
   // ── ORDERS ─────────────────────────────────────────────────────────────────
-  if (m === 'GET' && match(path, /\/(admin\/)?orders\/([^/]+)$/) && !path.endsWith('/status')) {
+  if (m === 'GET' && match(path, /\/(admin\/)?(orders|transactions)\/([^/]+)$/) && !path.endsWith('/status')) {
     const id = path.split('/').pop()!;
     const order = MOCK_ORDERS.find((o) => o.id === id || o.order_number === id);
     return order ? { code: '200', message: 'success', data: order } : { code: '404', message: 'not_found', data: { message: 'Not found' } };
   }
 
-  if (m === 'GET' && path.match(/\/(admin\/)?orders$/)) {
+  if (m === 'GET' && path.match(/\/(admin\/)?(orders|transactions)$/)) {
     const params = new URLSearchParams(qs);
     let items = [...MOCK_ORDERS];
     const status = params.get('status');
-    if (status) items = items.filter((o) => o.status === status);
-    if (q) items = items.filter((o) => o.order_number.includes(q) || o.shipping_address.recipient_name.toLowerCase().includes(q.toLowerCase()));
+    if (status) items = items.filter((o) => o.status.toLowerCase() === status.toLowerCase());
+    if (q) items = items.filter((o) => o.order_number.includes(q) || o.shipping_address?.recipient_name?.toLowerCase().includes(q.toLowerCase()));
     return { code: '200', message: 'success', data: paginate(items, page, perPage) };
   }
 
@@ -237,8 +237,19 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
     return { code: '201', message: 'success', data: newOrder };
   }
 
-  if (m === 'PATCH' && match(path, /\/orders\/([^/]+)\/status$/)) {
-    return { code: '200', message: 'success', data: { message: 'Status updated' } };
+  if (m === 'PATCH' && match(path, /\/(orders|transactions)\/([^/]+)\/status$/)) {
+    const id = path.split('/').slice(-2, -1)[0];
+    const { status } = body || {};
+    const order = MOCK_ORDERS.find((o) => o.id === id || o.order_number === id);
+    if (order) {
+      const normalizedStatus = status?.toLowerCase() || '';
+      order.status = normalizedStatus as any;
+      if (normalizedStatus === 'refunded' || normalizedStatus === 'cancelled') {
+        order.payment_status = 'refunded';
+      }
+      return { code: '200', message: 'success', data: order };
+    }
+    return { code: '404', message: 'not_found', data: { message: 'Order not found' } };
   }
 
   // ── ACCOUNT ────────────────────────────────────────────────────────────────
@@ -498,6 +509,57 @@ function getLocationName(id: string, type: 'province' | 'city' | 'district' | 's
       ];
     }
     return { code: '200', message: 'success', data: subs };
+  }
+
+  if (m === 'POST' && path.endsWith('/location/cost')) {
+    return {
+      code: '200',
+      message: 'success',
+      data: [
+        {
+          shipping_name: "SICEPAT",
+          service_name: "REG",
+          shipping_cost: 8000,
+          etd: "2-3 day"
+        },
+        {
+          shipping_name: "NINJA",
+          service_name: "Standard",
+          shipping_cost: 8800,
+          etd: "-"
+        },
+        {
+          shipping_name: "JNE",
+          service_name: "JNEFlat",
+          shipping_cost: 10500,
+          etd: "1-2 day"
+        },
+        {
+          shipping_name: "SAP",
+          service_name: "UDRREG",
+          shipping_cost: 12000,
+          etd: "1-3 day"
+        },
+        {
+          shipping_name: "IDEXPRESS",
+          service_name: "STD",
+          shipping_cost: 7600,
+          etd: "-"
+        },
+        {
+          shipping_name: "JNT",
+          service_name: "EZ",
+          shipping_cost: 8000,
+          etd: "-"
+        },
+        {
+          shipping_name: "LION",
+          service_name: "REGPACK",
+          shipping_cost: 13100,
+          etd: "3-6 day"
+        }
+      ]
+    };
   }
 
   // ── SHIPMENTS ──────────────────────────────────────────────────────────────

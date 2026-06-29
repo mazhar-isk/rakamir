@@ -58,6 +58,7 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Pesanan', icon: <ShoppingBag />, permission: 'orders:read',
     children: [
       { label: 'Daftar Pesanan', href: '/orders', permission: 'orders:read' },
+      { label: 'Proses Pesanan', href: '/orders/process', permission: 'orders:write' },
       { label: 'Pengiriman', href: '/shipments', permission: 'orders:read' },
     ],
   },
@@ -88,12 +89,29 @@ export default function Sidebar() {
   const { admin, role, can, logout } = useAdminAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [openGroups, setOpenGroups] = useState<string[]>(['Produk', 'Pengaturan']);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
+
+  const isActive = (href: string) => {
+    if (pathname === href) return true;
+    if (href === '/orders' && pathname.startsWith('/orders/')) {
+      return pathname !== '/orders/process';
+    }
+    if (href === '/products' && pathname.startsWith('/products/')) {
+      return pathname !== '/products/new';
+    }
+    return pathname.startsWith(href + '/');
+  };
 
   const toggleGroup = (label: string) =>
     setOpenGroups((prev) => prev.includes(label) ? prev.filter((g) => g !== label) : [...prev, label]);
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+  React.useEffect(() => {
+    const activeGroups = NAV_ITEMS.filter((item) =>
+      item.children?.some((child) => isActive(child.href))
+    ).map((item) => item.label);
+
+    setOpenGroups(activeGroups);
+  }, [pathname]);
 
   const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_WIDTH;
 
@@ -155,12 +173,19 @@ export default function Sidebar() {
 
           if (item.children) {
             const isOpen = openGroups.includes(item.label) && !collapsed;
+            const isGroupActive = item.children.some((child) => isActive(child.href));
             return (
               <React.Fragment key={item.label}>
                 <Tooltip title={collapsed ? item.label : ''} placement="right">
                   <ListItem disablePadding sx={{ mb: 0.5 }}>
                     <ListItemButton onClick={() => !collapsed && toggleGroup(item.label)}
-                      sx={{ borderRadius: 2, '&:hover': { bgcolor: 'rgba(249, 246, 242,0.75)', fontWeight: 700 }, minHeight: 44 }}>
+                      sx={{ 
+                        borderRadius: 2, 
+                        bgcolor: isGroupActive ? 'rgba(210, 107, 84, 0.08)' : 'transparent',
+                        color: isGroupActive ? '#D26B54' : 'inherit',
+                        '&:hover': { bgcolor: 'rgba(249, 246, 242,0.75)', fontWeight: 700 }, 
+                        minHeight: 44 
+                      }}>
                       <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>{item.icon}</ListItemIcon>
                       {!collapsed && <><ListItemText primary={item.label} primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 'unset' }} />{isOpen ? <ExpandLess /> : <ExpandMore />}</>}
                     </ListItemButton>

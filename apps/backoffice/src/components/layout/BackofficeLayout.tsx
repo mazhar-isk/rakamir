@@ -15,6 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/products/new': 'Tambah Produk',
   '/categories': 'Kategori Produk',
   '/orders': 'Manajemen Pesanan',
+  '/orders/process': 'Proses Pesanan',
   '/shipments': 'Manajemen Pengiriman',
   '/customers': 'Pelanggan',
   '/reports': 'Laporan & Analitik',

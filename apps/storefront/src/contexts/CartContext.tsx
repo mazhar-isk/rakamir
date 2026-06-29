@@ -29,7 +29,7 @@ const mapBackendItemToCartItem = (item: any): CartItem => {
       slug: item.product_id,
       name: item.name,
       description: '',
-      price: actualPrice,
+      price: item.price,
       original_price: actualPrice,
       stock: 999,
       images: item.image_url ? [item.image_url] : [],
@@ -44,8 +44,16 @@ const mapBackendItemToCartItem = (item: any): CartItem => {
       sold_count: 0,
       created_at: item.created_at,
     },
+    variant: {
+      id: item.product_variant_id,
+      name: item.product_variant_name,
+      value: item.product_variant_name,
+      price_modifier: item.price_modifier,
+      stock: item.stock,
+      picture: item.image_url,
+    },
     quantity: item.quantity,
-    subtotal: actualSubtotal,
+    subtotal: item.subtotal,
   };
 };
 
@@ -89,7 +97,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       await apiPost<any>('/carts/items', {
-        product_id: product.id,
+        product_variant_id: variant?.id,
         quantity,
       });
       await fetchCart();
@@ -114,6 +122,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
+    console.log(itemId, quantity);
+
     if (!isAuthenticated) return;
     try {
       await apiClient.put(`/carts/items/${itemId}`, { quantity });

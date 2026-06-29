@@ -258,7 +258,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
         }).filter(Boolean);
 
         variant = {
-          id: activeSku.sku_id,
+          id: activeSku.id,
           name: nameParts.join(', '),
           value: activeSku.sku,
           price_modifier: activeSku.price - product.price,
@@ -271,7 +271,6 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
         toast.error('Stok varian yang Anda pilih sedang kosong.');
         return;
       }
-
       addItem(product, qty, variant);
     }
   };

@@ -37,7 +37,6 @@ export const formatDateTime = (date: string | Date): string => {
   }).format(d);
 };
 
-// ---- Order Status ----
 export type OrderStatus =
   | 'pending'
   | 'payment_pending'
@@ -49,7 +48,8 @@ export type OrderStatus =
   | 'delivered'
   | 'completed'
   | 'cancelled'
-  | 'refunded';
+  | 'refunded'
+  | 'returned';
 
 export const ORDER_STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
   pending: { label: 'Menunggu', color: '#f59e0b' },
@@ -63,6 +63,7 @@ export const ORDER_STATUS_MAP: Record<OrderStatus, { label: string; color: strin
   completed: { label: 'Selesai', color: '#22c55e' },
   cancelled: { label: 'Dibatalkan', color: '#ef4444' },
   refunded: { label: 'Dikembalikan', color: '#6b7280' },
+  returned: { label: 'Retur/Dikembalikan', color: '#6b7280' },
 };
 
 export const getOrderStatusLabel = (status: OrderStatus): string =>

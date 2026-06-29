@@ -4,13 +4,14 @@ import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import { useCart } from '@/contexts/CartContext';
 import { Address, apiClient, apiPost, useGet } from '@ecommerce/api-client';
 import { formatCurrency } from '@ecommerce/utils';
-import { ArrowForward, ArrowBack, CheckCircle } from '@mui/icons-material';
+import { ArrowBack, ArrowForward, CheckCircle } from '@mui/icons-material';
 import {
   Box,
   Button,
   Card,
   Checkbox,
   Chip,
+  CircularProgress,
   Container,
   Divider,
   FormControl,
@@ -37,7 +38,7 @@ interface LocationItem {
   zip_code?: string;
 }
 
-const steps = ['Alamat', 'Review'];
+const steps = ['Alamat', 'Metode Pengiriman', 'Review'];
 
 const addressSchema = Yup.object({
   recipient_name: Yup.string().required('Nama penerima wajib diisi'),
@@ -51,23 +52,27 @@ const addressSchema = Yup.object({
   notes: Yup.string().optional(),
 });
 
-const paymentSchema = Yup.object({
-  payment_method: Yup.string().required('Pilih metode pembayaran'),
-  card_number: Yup.string().when('payment_method', {
-    is: 'credit_card',
-    then: (s) => s.required('Nomor kartu wajib diisi').min(19),
-  }),
-});
-
 export default function CheckoutPage() {
   const { items, total, clearCart, cartId } = useCart();
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('transfer');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: addresses } = useGet<Address[]>('/user/addresses');
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+
+  interface ShippingMethod {
+    shipping_name: string;
+    service_name: string;
+    shipping_cost: number;
+    etd: string;
+  }
+
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingMethod | null>(null);
+  const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
 
   const [provinces, setProvinces] = useState<LocationItem[]>([]);
   const [cities, setCities] = useState<LocationItem[]>([]);
@@ -98,8 +103,90 @@ export default function CheckoutPage() {
       save_address: false
     },
     validationSchema: addressSchema,
-    onSubmit: () => setActiveStep(1),
+    onSubmit: async (values) => {
+      if (selectedAddressId === 'new') {
+        setIsSubmittingAddress(true);
+        try {
+          const foundProv = provinces.find((p) => p.id === values.province_id);
+          const provinceName = foundProv ? foundProv.name : values.province;
+
+          const foundCity = cities.find((c) => c.id === values.city_id);
+          const cityName = foundCity ? foundCity.name : values.city;
+
+          const foundDist = districts.find((d) => d.id === values.district_id);
+          const districtName = foundDist ? foundDist.name : values.district;
+
+          const foundSub = subdistricts.find((s) => s.id === values.subdistrict_id);
+          const subdistrictName = foundSub ? foundSub.name : values.subdistrict;
+
+          const createdAddr = await apiPost<{ id: string }>('/user/addresses', {
+            label: `Alamat Baru`,
+            recipient_name: values.recipient_name,
+            recipient_phone: values.recipient_phone,
+            phone: values.recipient_phone,
+            address: values.address,
+            city_id: values.city_id,
+            city: cityName,
+            province_id: values.province_id,
+            province: provinceName,
+            district_id: values.district_id,
+            district: districtName,
+            subdistrict_id: values.subdistrict_id,
+            subdistrict: subdistrictName,
+            postal_code: values.postal_code,
+            is_default: false
+          });
+
+          if (createdAddr && createdAddr.id) {
+            setSelectedAddressId(createdAddr.id);
+            setActiveStep(1);
+          } else {
+            throw new Error('Gagal menyimpan alamat baru');
+          }
+        } catch (err: any) {
+          console.error('Error creating address:', err);
+          toast.error(err?.response?.data?.message || err?.message || 'Gagal menyimpan alamat baru');
+        } finally {
+          setIsSubmittingAddress(false);
+        }
+      } else {
+        setActiveStep(1);
+      }
+    },
   });
+
+  useEffect(() => {
+    if (activeStep === 1) {
+      const fetchShippingMethods = async () => {
+        setIsLoadingShipping(true);
+        setShippingError(null);
+        try {
+          const subdistrictId = addressForm.values.subdistrict_id;
+          if (!subdistrictId) {
+            throw new Error('Kelurahan/Desa harus dipilih terlebih dahulu');
+          }
+          const res = await apiPost<ShippingMethod[]>('/location/cost', {
+            cart_id: cartId,
+            price: 'lowest',
+            destination_sub_district_id: subdistrictId
+          });
+          setShippingMethods(res || []);
+          if (res && res.length > 0) {
+            const alreadySelected = selectedShipping ? res.find(s => s.shipping_name === selectedShipping.shipping_name && s.service_name === selectedShipping.service_name) : null;
+            setSelectedShipping(alreadySelected || res[0]);
+          } else {
+            setSelectedShipping(null);
+          }
+        } catch (err: any) {
+          console.error('Failed to fetch shipping methods', err);
+          setShippingError(err?.response?.data?.message || err?.message || 'Gagal memuat metode pengiriman');
+        } finally {
+          setIsLoadingShipping(false);
+        }
+      };
+      fetchShippingMethods();
+    }
+  }, [activeStep, cartId, addressForm.values.subdistrict_id]);
 
   // Load provinces on mount
   useEffect(() => {
@@ -194,83 +281,23 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setIsSubmitting(true);
     try {
-      let courier_code = 'jne';
-      let courier_name = 'JNE';
-      let service_code = 'REG';
-      let service_name = 'Regular Service';
-      let shipping_cost = 0;
-
-      if (addressForm.values.shipping_method === 'express') {
-        courier_code = 'jne';
-        courier_name = 'JNE';
-        service_code = 'YES';
-        service_name = 'Yakin Esok Sampai';
-        shipping_cost = 25000;
-      } else if (addressForm.values.shipping_method === 'same_day') {
-        courier_code = 'grab';
-        courier_name = 'Grab';
-        service_code = 'SAMEDAY';
-        service_name = 'Same Day';
-        shipping_cost = 45000;
+      if (!selectedShipping) {
+        toast.error('Silakan pilih metode pengiriman terlebih dahulu');
+        setIsSubmitting(false);
+        return;
       }
 
-      if (selectedAddressId === 'new' && addressForm.values.save_address) {
-        try {
-          await apiPost('/user/addresses', {
-            label: 'Alamat Baru',
-            recipient_name: addressForm.values.recipient_name,
-            recipient_phone: addressForm.values.recipient_phone,
-            address: addressForm.values.address,
-            city_id: addressForm.values.city_id,
-            province_id: addressForm.values.province_id,
-            district_id: addressForm.values.district_id,
-            subdistrict_id: addressForm.values.subdistrict_id,
-            postal_code: addressForm.values.postal_code,
-            is_default: false
-          });
-        } catch (e) {
-          console.error('Gagal menyimpan alamat baru');
-        }
-      }
-
-      let provinceVal = addressForm.values.province_id;
-      let cityVal = addressForm.values.city_id;
-      let districtVal = addressForm.values.district_id;
-      let subDistrictVal = addressForm.values.subdistrict_id;
-
-      if (selectedAddressId === 'new') {
-        const foundProv = provinces.find((p) => p.id === provinceVal);
-        if (foundProv) provinceVal = foundProv.name;
-
-        const foundCity = cities.find((c) => c.id === cityVal);
-        if (foundCity) cityVal = foundCity.name;
-
-        const foundDist = districts.find((d) => d.id === districtVal);
-        if (foundDist) districtVal = foundDist.name;
-
-        const foundSub = subdistricts.find((s) => s.id === subDistrictVal);
-        if (foundSub) subDistrictVal = foundSub.name;
-      }
-
-      const response = await apiPost<{ redirect_url: string }>('/transactions', {
+      const payload = {
         cart_id: cartId,
         shipment: {
-          courier_code,
-          courier_name,
-          service_code,
-          service_name,
-          recipient_name: addressForm.values.recipient_name,
-          recipient_phone: addressForm.values.recipient_phone,
-          province_id: provinceVal,
-          city_id: cityVal,
-          district_id: districtVal,
-          sub_district_id: subDistrictVal,
-          postal_code: addressForm.values.postal_code,
-          address: addressForm.values.address,
-          shipping_cost,
+          shipping_name: selectedShipping.shipping_name,
+          service_name: selectedShipping.service_name,
+          user_address_id: selectedAddressId,
         },
         notes: addressForm.values.notes || 'Please deliver between 9 AM - 5 PM',
-      });
+      };
+
+      const response = await apiPost<{ redirect_url: string }>('/transactions', payload);
 
       await clearCart();
       toast.success('Pesanan berhasil dibuat! Mengalihkan ke pembayaran...');
@@ -415,8 +442,9 @@ export default function CheckoutPage() {
                                 try {
                                   const { data: res } = await apiClient.get<LocationItem[]>(`/location/cities?province_id=${provId}`);
                                   setCities(res || []);
-                                } catch {
-                                  toast.error('Gagal memuat data kota.');
+                                } catch (err: any) {
+                                  console.error('Failed to fetch cities:', err);
+                                  toast.error(err?.response?.data?.message || err?.message || 'Gagal memuat data kota.');
                                 }
                               }
                             }}
@@ -460,8 +488,9 @@ export default function CheckoutPage() {
                                 try {
                                   const { data: res } = await apiClient.get<LocationItem[]>(`/location/districts?city_id=${cityId}`);
                                   setDistricts(res || []);
-                                } catch {
-                                  toast.error('Gagal memuat data kecamatan.');
+                                } catch (err: any) {
+                                  console.error('Failed to fetch districts:', err);
+                                  toast.error(err?.response?.data?.message || err?.message || 'Gagal memuat data kecamatan.');
                                 }
                               }
                             }}
@@ -502,8 +531,9 @@ export default function CheckoutPage() {
                                 try {
                                   const { data: res } = await apiClient.get<LocationItem[]>(`/location/subdistricts?district_id=${distId}`);
                                   setSubdistricts(res || []);
-                                } catch {
-                                  toast.error('Gagal memuat data kelurahan.');
+                                } catch (err: any) {
+                                  console.error('Failed to fetch subdistricts:', err);
+                                  toast.error(err?.response?.data?.message || err?.message || 'Gagal memuat data kelurahan.');
                                 }
                               }
                             }}
@@ -566,18 +596,7 @@ export default function CheckoutPage() {
                         />
                       </Grid>
 
-                      <Grid item xs={12}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={addressForm.values.save_address}
-                              onChange={(e) => addressForm.setFieldValue('save_address', e.target.checked)}
-                              color="primary"
-                            />
-                          }
-                          label="Simpan alamat ini ke akun saya"
-                        />
-                      </Grid>
+                      {/* Checkbox 'Simpan alamat' removed */}
                     </>
                   ) : (
                     <Grid item xs={12}>
@@ -590,41 +609,18 @@ export default function CheckoutPage() {
                       </Box>
                     </Grid>
                   )}
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Catatan Pengiriman (Opsional)"
-                      name="notes"
-                      value={addressForm.values.notes}
-                      onChange={addressForm.handleChange}
-                      placeholder="Contoh: Titipkan ke satpam jika tidak ada di rumah"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Metode Pengiriman</InputLabel>
-                      <Select name="shipping_method" value={addressForm.values.shipping_method} label="Metode Pengiriman" onChange={addressForm.handleChange}>
-                        <MenuItem value="regular">Reguler (3-5 hari) — Gratis</MenuItem>
-                        <MenuItem value="express">Express (1-2 hari) — Rp 25.000</MenuItem>
-                        <MenuItem value="same_day">Same Day — Rp 45.000</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                  {/* Notes textfield moved to step 1 */}
                 </Grid>
                 <Button
                   variant="contained"
                   fullWidth
                   size="large"
-                  endIcon={!isSubmitting && <ArrowForward />}
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    console.log("Form values:", addressForm.values);
-                    console.log("Form validation errors:", addressForm.errors);
-                    addressForm.submitForm();
-                  }}
+                  endIcon={!isSubmittingAddress && <ArrowForward />}
+                  disabled={isSubmittingAddress}
+                  onClick={() => addressForm.submitForm()}
                   sx={{ mt: 4 }}
                 >
-                  {isSubmitting ? 'Memproses...' : 'Lanjut ke Review'}
+                  {isSubmittingAddress ? 'Menyimpan Alamat...' : 'Lanjut ke Metode Pengiriman'}
                 </Button>
                 {Object.keys(addressForm.errors).length > 0 && (
                   <Box sx={{ mt: 2, p: 2, bgcolor: '#fdf2f2', borderRadius: 2, border: '1px solid #fde8e8' }}>
@@ -643,8 +639,121 @@ export default function CheckoutPage() {
 
             {activeStep === 1 && (
               <Card sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={700} mb={3}>Metode Pengiriman</Typography>
+
+                {/* Shipping address summary context */}
+                <Box sx={{ mb: 4, p: 2.5, bgcolor: '#FAF8F6', borderRadius: 2, border: '1px solid rgba(210,107,84,0.1)' }}>
+                  <Typography variant="subtitle2" fontWeight={700} color="primary" mb={1}>Alamat Pengiriman</Typography>
+                  <Typography fontWeight={600} variant="body2">{addressForm.values.recipient_name} ({addressForm.values.recipient_phone})</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {addressForm.values.address}, {addressForm.values.subdistrict ? `Kel. ${addressForm.values.subdistrict}, ` : ''}{addressForm.values.district ? `Kec. ${addressForm.values.district}, ` : ''}{addressForm.values.city}, {addressForm.values.province}, {addressForm.values.postal_code}
+                  </Typography>
+                </Box>
+
+                {isLoadingShipping ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, gap: 2 }}>
+                    <CircularProgress size={40} thickness={4} sx={{ color: '#D26B54' }} />
+                    <Typography variant="body2" color="text.secondary" fontWeight={500}>Memuat pilihan pengiriman...</Typography>
+                  </Box>
+                ) : shippingError ? (
+                  <Box sx={{ p: 3, bgcolor: '#fdf2f2', borderRadius: 2, border: '1px solid #fde8e8', textAlign: 'center' }}>
+                    <Typography color="error" variant="body2" mb={2} fontWeight={600}>{shippingError}</Typography>
+                    <Button variant="outlined" color="primary" onClick={() => {
+                      // Trigger refetch by temporarily changing activeStep and back
+                      setActiveStep(0);
+                      setTimeout(() => setActiveStep(1), 50);
+                    }}>
+                      Coba Lagi
+                    </Button>
+                  </Box>
+                ) : shippingMethods.length === 0 ? (
+                  <Box sx={{ p: 4, textAlign: 'center', bgcolor: '#FAF8F6', borderRadius: 2 }}>
+                    <Typography variant="body2" color="text.secondary">Tidak ada metode pengiriman yang tersedia untuk wilayah ini.</Typography>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={700} mb={2}>Pilih Kurir & Layanan Pengiriman</Typography>
+                    <Grid container spacing={2}>
+                      {shippingMethods.map((method) => {
+                        const isSelected = selectedShipping?.shipping_name === method.shipping_name && selectedShipping?.service_name === method.service_name;
+                        return (
+                          <Grid item xs={12} key={`${method.shipping_name}-${method.service_name}`}>
+                            <Card
+                              variant="outlined"
+                              onClick={() => setSelectedShipping(method)}
+                              sx={{
+                                p: 2.5,
+                                cursor: 'pointer',
+                                border: isSelected ? '2px solid #D26B54' : '1px solid #E5E7EB',
+                                bgcolor: isSelected ? '#FDF8F5' : 'inherit',
+                                '&:hover': { borderColor: '#D26B54' },
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: 'all 0.2s ease-in-out'
+                              }}
+                            >
+                              <Box>
+                                <Typography fontWeight={700} fontSize="1rem" color={isSelected ? 'primary.main' : 'text.primary'}>
+                                  {method.shipping_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                  Layanan: {method.service_name} {method.etd && method.etd !== '-' ? `| Estimasi: ${method.etd}` : ''}
+                                </Typography>
+                              </Box>
+                              <Typography fontWeight={800} fontSize="1.1rem" color="primary.main">
+                                {formatCurrency(method.shipping_cost)}
+                              </Typography>
+                            </Card>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  </Box>
+                )}
+
+                {/* Relocated Notes Field */}
+                {!isLoadingShipping && !shippingError && shippingMethods.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <TextField
+                      fullWidth
+                      label="Catatan Pengiriman (Opsional)"
+                      name="notes"
+                      value={addressForm.values.notes}
+                      onChange={addressForm.handleChange}
+                      placeholder="Contoh: Titipkan ke satpam jika tidak ada di rumah"
+                    />
+                  </Box>
+                )}
+
+                <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<ArrowBack />}
+                    onClick={() => setActiveStep(0)}
+                    sx={{ flex: 1 }}
+                  >
+                    Kembali
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    endIcon={<ArrowForward />}
+                    disabled={!selectedShipping || isLoadingShipping || Boolean(shippingError)}
+                    onClick={() => setActiveStep(2)}
+                    sx={{ flex: 1 }}
+                  >
+                    Lanjut ke Review
+                  </Button>
+                </Box>
+              </Card>
+            )}
+
+            {activeStep === 2 && (
+              <Card sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight={700} mb={3}>Review Pesanan</Typography>
-                
+
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" fontWeight={700} mb={1} color="primary">Alamat Pengiriman</Typography>
                   <Typography fontWeight={600} variant="body2">{addressForm.values.recipient_name} ({addressForm.values.recipient_phone})</Typography>
@@ -652,20 +761,18 @@ export default function CheckoutPage() {
                     {addressForm.values.address}, {addressForm.values.subdistrict ? `Kel. ${addressForm.values.subdistrict}, ` : ''}{addressForm.values.district ? `Kec. ${addressForm.values.district}, ` : ''}{addressForm.values.city}, {addressForm.values.province} {addressForm.values.postal_code}
                   </Typography>
                 </Box>
-                
+
                 <Divider sx={{ mb: 3 }} />
-                
+
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" fontWeight={700} mb={1} color="primary">Metode Pengiriman</Typography>
                   <Typography fontWeight={600} variant="body2">
-                    {addressForm.values.shipping_method === 'express' ? 'Express (1-2 hari) — Rp 25.000' : 
-                     addressForm.values.shipping_method === 'same_day' ? 'Same Day — Rp 45.000' : 
-                     'Reguler (3-5 hari) — Gratis'}
+                    {selectedShipping ? `${selectedShipping.shipping_name} - ${selectedShipping.service_name} (${selectedShipping.etd !== '-' ? selectedShipping.etd : 'Estimasi waktu tidak tersedia'})` : '-'}
                   </Typography>
                 </Box>
-                
+
                 <Divider sx={{ mb: 3 }} />
-                
+
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" fontWeight={700} mb={2} color="primary">Detail Produk</Typography>
                   {items.map((item) => (
@@ -682,26 +789,26 @@ export default function CheckoutPage() {
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Biaya Pengiriman</Typography>
                     <Typography variant="body2" fontWeight={500}>
-                      {formatCurrency(addressForm.values.shipping_method === 'express' ? 25000 : addressForm.values.shipping_method === 'same_day' ? 45000 : 0)}
+                      {selectedShipping ? formatCurrency(selectedShipping.shipping_cost) : formatCurrency(0)}
                     </Typography>
                   </Box>
                 </Box>
-                
+
                 <Divider sx={{ my: 2 }} />
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
                   <Typography variant="h6" fontWeight={700}>Total Akhir</Typography>
                   <Typography variant="h6" fontWeight={800} color="primary.main">
-                    {formatCurrency(total + (addressForm.values.shipping_method === 'express' ? 25000 : addressForm.values.shipping_method === 'same_day' ? 45000 : 0))}
+                    {formatCurrency(total + (selectedShipping ? selectedShipping.shipping_cost : 0))}
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Button
                     variant="outlined"
                     size="large"
                     startIcon={<ArrowBack />}
-                    onClick={() => setActiveStep(0)}
+                    onClick={() => setActiveStep(1)}
                     disabled={isSubmitting}
                     sx={{ flex: 1 }}
                   >
@@ -735,9 +842,20 @@ export default function CheckoutPage() {
                 </Box>
               ))}
               <Divider sx={{ my: 2 }} />
+              {selectedShipping && (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Typography variant="body2" color="text.secondary">Biaya Pengiriman</Typography>
+                    <Typography variant="body2" fontWeight={600}>{formatCurrency(selectedShipping.shipping_cost)}</Typography>
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                </>
+              )}
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography fontWeight={700}>Total</Typography>
-                <Typography fontWeight={800} color="primary.main">{formatCurrency(total)}</Typography>
+                <Typography fontWeight={800} color="primary.main">
+                  {formatCurrency(total + (selectedShipping ? selectedShipping.shipping_cost : 0))}
+                </Typography>
               </Box>
             </Card>
           </Box>

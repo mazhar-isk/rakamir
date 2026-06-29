@@ -133,12 +133,16 @@ export interface Cart {
 export type OrderStatus =
   | 'pending'
   | 'payment_pending'
+  | 'waiting_confirmation'
+  | 'waiting_payment'
   | 'paid'
   | 'processing'
   | 'shipped'
   | 'delivered'
+  | 'completed'
   | 'cancelled'
-  | 'refunded';
+  | 'refunded'
+  | 'returned';
 
 export interface Order {
   id: string;

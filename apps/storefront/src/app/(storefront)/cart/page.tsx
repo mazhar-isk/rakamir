@@ -48,11 +48,11 @@ export default function CartPage() {
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                    <IconButton size="small" color="error" onClick={() => removeItem(item.id)}><Delete fontSize="small" /></IconButton>
+                    <IconButton size="small" color="error" onClick={() => removeItem(item.variant?.id || item.product.id)}><Delete fontSize="small" /></IconButton>
                     <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid #E5E7EB', borderRadius: 2 }}>
-                      <IconButton size="small" onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}><Remove fontSize="small" /></IconButton>
+                      <IconButton size="small" onClick={() => updateQuantity(item.variant?.id || item.product.id, Math.max(1, item.quantity - 1))}><Remove fontSize="small" /></IconButton>
                       <Typography sx={{ px: 2, fontWeight: 600 }}>{item.quantity}</Typography>
-                      <IconButton size="small" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Add fontSize="small" /></IconButton>
+                      <IconButton size="small" onClick={() => updateQuantity(item.variant?.id || item.product.id, item.quantity + 1)}><Add fontSize="small" /></IconButton>
                     </Box>
                   </Box>
                 </Box>

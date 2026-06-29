@@ -5,8 +5,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { Product } from '@ecommerce/api-client';
 import { formatCurrency } from '@ecommerce/utils';
-import { Close, ShoppingCartOutlined, Visibility } from '@mui/icons-material';
-import { Box, Button, Card, CardContent, Chip, Dialog, DialogContent, Fade, Grid, IconButton, Rating, Stack, Typography } from '@mui/material';
+import { Close, Visibility } from '@mui/icons-material';
+import { Box, Button, Card, CardContent, Chip, Dialog, DialogContent, Fade, Grid, IconButton, Stack, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -184,7 +184,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                   zIndex: 3
                 }}
               >
-                <Button
+                {/* <Button
                   variant="contained"
                   onClick={handleAddToCart}
                   fullWidth
@@ -205,15 +205,15 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                   }}
                 >
                   Beli
-                </Button>
-                <IconButton
+                </Button> */}
+                <Button
                   onClick={handleQuickView}
                   sx={{
                     bgcolor: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(8px)',
                     color: '#2E2A27',
                     borderRadius: '8px',
-                    width: 38,
+                    // width: 38,
                     height: 38,
                     '&:hover': {
                       bgcolor: '#FFFFFF',
@@ -221,9 +221,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                     },
                     transition: 'all 0.2s'
                   }}
+                  fullWidth
+                  endIcon={<Visibility />}
                 >
-                  <Visibility sx={{ fontSize: 18 }} />
-                </IconButton>
+                  Quick View
+                </Button>
               </Box>
             </Box>
           </Link>
@@ -374,12 +376,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               </Typography>
 
               {/* Rating */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                 <Rating value={product.rating || 5} precision={0.5} readOnly sx={{ color: '#D26B54', fontSize: '1rem' }} />
                 <Typography variant="body2" color="#7B6E66" sx={{ fontSize: '0.8rem' }}>
                   {product.rating || '5.0'} ({product.review_count || 0} Ulasan Pelanggan)
                 </Typography>
-              </Box>
+              </Box> */}
 
               {/* Price */}
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 3 }}>
@@ -408,7 +410,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
               {/* CTA Action */}
               <Stack direction="row" spacing={2} sx={{ mt: 'auto' }}>
-                <Button
+                {/* <Button
                   variant="contained"
                   onClick={handleQuickViewAddToCart}
                   fullWidth
@@ -428,8 +430,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                   }}
                 >
                   Tambah Ke Keranjang
-                </Button>
+                </Button> */}
                 <Button
+                  fullWidth
                   variant="outlined"
                   onClick={() => {
                     setOpenQuickView(false);
@@ -447,7 +450,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                     }
                   }}
                 >
-                  Detail
+                  Lihat Detail
                 </Button>
               </Stack>
             </Grid>
