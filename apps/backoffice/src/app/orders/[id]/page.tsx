@@ -1,7 +1,7 @@
 'use client';
 
 import BackofficeLayout from '@/components/layout/BackofficeLayout';
-import { apiPatch, ShipmentTracking, useGet } from '@ecommerce/api-client';
+import { apiPatch, useGet } from '@ecommerce/api-client';
 import { formatCurrency, formatDateTime, getOrderStatusColor, getOrderStatusLabel, OrderStatus } from '@ecommerce/utils';
 import { ArrowBack, LocalShipping } from '@mui/icons-material';
 import {
@@ -29,7 +29,6 @@ const STATUS_OPTIONS: OrderStatus[] = ['pending', 'payment_pending', 'waiting_co
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const { data: rawOrder, isLoading } = useGet<any>(`/admin/transactions/${params.id}`);
-  const { data: tracking } = useGet<ShipmentTracking>(rawOrder?.shipment?.tracking_number ? `/shipments/${rawOrder.shipment.tracking_number}` : null);
   const { mutate } = useSWRConfig();
 
   const order = useMemo(() => {
@@ -62,64 +61,80 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
     const status = (order.status || '').toLowerCase();
 
-    switch (status) {
-      case 'pending':
-      case 'payment_pending':
-      case 'waiting_payment':
-        return [
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'waiting_confirmation':
-        return [
-          { description: 'Menunggu Konfirmasi Pembayaran', location: 'Sistem', timestamp: addTime(5) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'paid':
-        return [
-          { description: 'Menunggu Konfirmasi Penjual', location: 'Sistem', timestamp: addTime(10) },
-          { description: 'Pembayaran Terverifikasi', location: 'Sistem', timestamp: addTime(5) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'processing':
-        return [
-          { description: 'Pesanan Diproses oleh Penjual', location: 'Gudang Penjual', timestamp: addTime(30) },
-          { description: 'Pembayaran Terverifikasi', location: 'Sistem', timestamp: addTime(5) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'shipped':
-        return [
-          { description: 'Pesanan Sedang Dikirim', location: 'Dalam Perjalanan', timestamp: addTime(240) },
-          { description: 'Pesanan Diserahkan ke Kurir', location: 'Logistik Hub', timestamp: addTime(120) },
-          { description: 'Pesanan Diproses oleh Penjual', location: 'Gudang Penjual', timestamp: addTime(30) },
-          { description: 'Pembayaran Terverifikasi', location: 'Sistem', timestamp: addTime(5) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'delivered':
-      case 'completed':
-        return [
-          { description: 'Pesanan Diterima oleh Penerima', location: 'Alamat Tujuan', timestamp: addTime(1440) },
-          { description: 'Pesanan Sedang Dikirim', location: 'Dalam Perjalanan', timestamp: addTime(240) },
-          { description: 'Pesanan Diserahkan ke Kurir', location: 'Logistik Hub', timestamp: addTime(120) },
-          { description: 'Pesanan Diproses oleh Penjual', location: 'Gudang Penjual', timestamp: addTime(30) },
-          { description: 'Pembayaran Terverifikasi', location: 'Sistem', timestamp: addTime(5) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'cancelled':
-        return [
-          { description: 'Pesanan Dibatalkan', location: 'Sistem', timestamp: addTime(60) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      case 'refunded':
-        return [
-          { description: 'Dana Dikembalikan (Refunded)', location: 'Sistem', timestamp: addTime(1440) },
-          { description: 'Pesanan Dibatalkan', location: 'Sistem', timestamp: addTime(60) },
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
-      default:
-        return [
-          { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
-        ];
+    // Standard status flows
+    const baseEvents = [
+      { description: 'Pembayaran Terverifikasi', location: 'Sistem', timestamp: addTime(5) },
+      { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
+    ];
+
+    if (['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(status)) {
+      const timeline = [];
+
+      // If status is completed, prepend order completed milestone
+      if (status === 'completed') {
+        timeline.push({
+          description: 'Pesanan Selesai',
+          location: 'Sistem',
+          timestamp: order.updated_at || addTime(1500)
+        });
+      }
+
+      // If order is shipped or later, prepends courier tracking histories
+      const histories = order.shipping_histories || order.shipment?.shipping_histories || [];
+      if (['shipped', 'delivered', 'completed'].includes(status)) {
+        if (histories.length > 0) {
+          timeline.push(...histories.map((h: any) => ({
+            description: h.description,
+            location: h.location || 'Sistem',
+            timestamp: h.created_at || h.timestamp,
+          })));
+        } else {
+          // Fallback dummy shipment events if no history is returned yet
+          if (['delivered', 'completed'].includes(status)) {
+            timeline.push({ description: 'Pesanan Diterima oleh Penerima', location: 'Alamat Tujuan', timestamp: addTime(1440) });
+          }
+          timeline.push(
+            { description: 'Pesanan Sedang Dikirim', location: 'Dalam Perjalanan', timestamp: addTime(240) },
+            { description: 'Pesanan Diserahkan ke Kurir', location: 'Logistik Hub', timestamp: addTime(120) }
+          );
+        }
+      }
+
+      // Add "Pesanan Diproses oleh Penjual" milestone for paid or later states
+      timeline.push({ description: 'Pesanan Diproses oleh Penjual', location: 'Gudang Penjual', timestamp: addTime(30) });
+
+      // Append verification and creation
+      timeline.push(...baseEvents);
+
+      return timeline;
     }
+
+    if (status === 'waiting_confirmation') {
+      return [
+        { description: 'Menunggu Konfirmasi Pembayaran', location: 'Sistem', timestamp: addTime(5) },
+        { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
+      ];
+    }
+
+    if (status === 'cancelled') {
+      return [
+        { description: 'Pesanan Dibatalkan', location: 'Sistem', timestamp: addTime(60) },
+        { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
+      ];
+    }
+
+    if (status === 'refunded') {
+      return [
+        { description: 'Dana Dikembalikan (Refunded)', location: 'Sistem', timestamp: addTime(1440) },
+        { description: 'Pesanan Dibatalkan', location: 'Sistem', timestamp: addTime(60) },
+        { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
+      ];
+    }
+
+    // Default (pending / waiting_payment)
+    return [
+      { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString() }
+    ];
   }, [order]);
 
   const updateStatus = async (status: string) => {
@@ -227,7 +242,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               <Typography fontWeight={700}>Total</Typography>
               <Typography fontWeight={800} color="primary.main">{formatCurrency(order.summary.grand_total)}</Typography>
             </Box>
-            <Chip label={(order.status || '').toLowerCase() === 'paid' ? '✓ Lunas' : '⚠ Belum Bayar'} color={(order.status || '').toLowerCase() === 'paid' ? 'success' : 'warning'} size="small" sx={{ mt: 2, fontWeight: 600 }} />
+            <Chip label={order.is_paid ? '✓ Lunas' : '⚠ Belum Bayar'} color={order.is_paid ? 'success' : 'warning'} size="small" sx={{ mt: 2, fontWeight: 600 }} />
           </Card>
 
           {/* Shipping */}

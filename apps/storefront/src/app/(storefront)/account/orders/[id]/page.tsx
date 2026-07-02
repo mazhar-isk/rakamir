@@ -1,7 +1,7 @@
 'use client';
 
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
-import { ShipmentTracking, useGet } from '@ecommerce/api-client';
+import { useGet } from '@ecommerce/api-client';
 import { formatCurrency, formatDateTime, getOrderStatusColor, getOrderStatusLabel, OrderStatus } from '@ecommerce/utils';
 import { AccessTime, ArrowBack, CheckCircle, Inventory, LocalShipping } from '@mui/icons-material';
 import {
@@ -71,14 +71,103 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       items,
       shipping_address,
       tracking_number: rawOrder.shipment?.tracking_number || undefined,
+      shipping_histories: rawOrder.shipping_histories || rawOrder.shipment?.shipping_histories || [],
+      courier: rawOrder.shipment?.courier_name || 'Standard',
+      estimated_delivery: rawOrder.shipment?.estimated_delivery_date || '-',
       payment_method: 'Midtrans / Transfer Bank',
       payment_status: rawOrder.is_paid ? 'paid' : 'pending',
     };
   }, [rawOrder]);
 
-  const { data: tracking } = useGet<ShipmentTracking>(
-    order?.tracking_number ? `/shipments/${order.tracking_number}` : null
-  );
+  const trackingEvents = useMemo(() => {
+    if (!order) return [];
+    const baseDate = new Date(order.created_at);
+
+    const addTime = (minutes: number) => {
+      const d = new Date(baseDate);
+      d.setMinutes(d.getMinutes() + minutes);
+      return d.toISOString();
+    };
+
+    const status = (order.status || '').toLowerCase();
+
+    // Standard status flows
+    const baseEvents = [
+      { description: 'Pembayaran Terverifikasi', location: 'Sistem', timestamp: addTime(5), status: 'default' },
+      { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString(), status: 'default' }
+    ];
+
+    if (['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(status)) {
+      const timeline = [];
+
+      // If status is completed, prepend order completed milestone
+      if (status === 'completed') {
+        timeline.push({
+          description: 'Pesanan Selesai',
+          location: 'Sistem',
+          timestamp: order.updated_at || addTime(1500),
+          status: 'delivered'
+        });
+      }
+
+      // If order is shipped or later, prepends courier tracking histories
+      const histories = order.shipping_histories || [];
+      if (['shipped', 'delivered', 'completed'].includes(status)) {
+        if (histories.length > 0) {
+          timeline.push(...histories.map((h: any) => ({
+            description: h.description,
+            location: h.location || 'Sistem',
+            timestamp: h.created_at || h.timestamp,
+            status: h.status || 'default'
+          })));
+        } else {
+          // Fallback dummy shipment events if no history is returned yet
+          if (['delivered', 'completed'].includes(status)) {
+            timeline.push({ description: 'Pesanan Diterima oleh Penerima', location: 'Alamat Tujuan', timestamp: addTime(1440), status: 'delivered' });
+          }
+          timeline.push(
+            { description: 'Pesanan Sedang Dikirim', location: 'Dalam Perjalanan', timestamp: addTime(240), status: 'in_transit' },
+            { description: 'Pesanan Diserahkan ke Kurir', location: 'Logistik Hub', timestamp: addTime(120), status: 'picked_up' }
+          );
+        }
+      }
+
+      // Add "Pesanan Diproses oleh Penjual" milestone for paid or later states
+      timeline.push({ description: 'Pesanan Diproses oleh Penjual', location: 'Gudang Penjual', timestamp: addTime(30), status: 'picked_up' });
+
+      // Append verification and creation
+      timeline.push(...baseEvents);
+
+      return timeline;
+    }
+
+    if (status === 'waiting_confirmation') {
+      return [
+        { description: 'Menunggu Konfirmasi Pembayaran', location: 'Sistem', timestamp: addTime(5), status: 'default' },
+        { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString(), status: 'default' }
+      ];
+    }
+
+    if (status === 'cancelled') {
+      return [
+        { description: 'Pesanan Dibatalkan', location: 'Sistem', timestamp: addTime(60), status: 'default' },
+        { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString(), status: 'default' }
+      ];
+    }
+
+    if (status === 'refunded') {
+      return [
+        { description: 'Dana Dikembalikan (Refunded)', location: 'Sistem', timestamp: addTime(1440), status: 'default' },
+        { description: 'Pesanan Dibatalkan', location: 'Sistem', timestamp: addTime(60), status: 'default' },
+        { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString(), status: 'default' }
+      ];
+    }
+
+    // Default (pending / waiting_payment)
+    return [
+      { description: 'Pesanan Dibuat', location: 'Sistem', timestamp: baseDate.toISOString(), status: 'default' }
+    ];
+  }, [order]);
 
   if (orderLoading) {
     return (
@@ -134,29 +223,31 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </Card>
 
             {/* Shipment Tracking */}
-            {tracking && (
+            {trackingEvents && trackingEvents.length > 0 && (
               <Card sx={{ p: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h6" fontWeight={700}>Lacak Pengiriman</Typography>
                   <Box>
                     <Typography variant="caption" color="text.secondary">No. Resi</Typography>
-                    <Typography fontWeight={700} sx={{ fontFamily: 'monospace' }}>{tracking.tracking_number}</Typography>
+                    <Typography fontWeight={700} sx={{ fontFamily: 'monospace' }}>{order.tracking_number || "Belum ada resi"}</Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, bgcolor: '#FAF5F2', borderRadius: 2, border: '1px solid rgba(235,196,184,0.2)' }}>
-                  <LocalShipping sx={{ color: 'primary.main' }} />
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Kurir</Typography>
-                    <Typography fontWeight={600}>{tracking.courier}</Typography>
+                {order.tracking_number && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, bgcolor: '#FAF5F2', borderRadius: 2, border: '1px solid rgba(235,196,184,0.2)' }}>
+                    <LocalShipping sx={{ color: 'primary.main' }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Kurir</Typography>
+                      <Typography fontWeight={600}>{order.courier}</Typography>
+                    </Box>
+                    <Box sx={{ ml: 'auto', textAlign: 'right' }}>
+                      <Typography variant="caption" color="text.secondary">Est. Tiba</Typography>
+                      <Typography fontWeight={600}>{order.estimated_delivery}</Typography>
+                    </Box>
                   </Box>
-                  <Box sx={{ ml: 'auto', textAlign: 'right' }}>
-                    <Typography variant="caption" color="text.secondary">Est. Tiba</Typography>
-                    <Typography fontWeight={600}>{tracking.estimated_delivery}</Typography>
-                  </Box>
-                </Box>
+                )}
 
-                <Stepper orientation="vertical" activeStep={tracking.events.length}>
-                  {tracking.events.map((event, i) => (
+                <Stepper orientation="vertical" activeStep={1}>
+                  {trackingEvents.map((event: any, i: number) => (
                     <Step key={i} completed>
                       <StepLabel
                         icon={
@@ -165,22 +256,12 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           </Avatar>
                         }
                       >
-                        <Typography fontWeight={600} variant="body2">{event.description}</Typography>
-                        <Typography variant="caption" color="text.secondary">{event.location}</Typography>
+                        <Typography fontWeight={600} variant="body2" color={i === 0 ? 'primary.main' : 'text.primary'}>{event.description}</Typography>
+                        <Typography variant="caption" color="text.secondary">{event.location} · {formatDateTime(event.timestamp)}</Typography>
                       </StepLabel>
-                      <StepContent>
-                        <Typography variant="caption" color="text.secondary">{formatDateTime(event.timestamp)}</Typography>
-                      </StepContent>
                     </Step>
                   ))}
                 </Stepper>
-              </Card>
-            )}
-
-            {!tracking && order.tracking_number && (
-              <Card sx={{ p: 3, mb: 3, textAlign: 'center' }}>
-                <LocalShipping sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                <Typography color="text.secondary">Data tracking sedang dimuat...</Typography>
               </Card>
             )}
           </Grid>

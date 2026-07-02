@@ -144,6 +144,28 @@ export type OrderStatus =
   | 'refunded'
   | 'returned';
 
+export interface ShippingHistory {
+  id: string;
+  status: string;
+  description: string;
+  location: string;
+  created_at: string;
+}
+
+export interface Shipment {
+  id: string;
+  tracking_number: string;
+  courier_name: string;
+  service_name: string;
+  recipient_name: string;
+  recipient_phone: string;
+  address: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  shipping_histories: ShippingHistory[];
+}
+
 export interface Order {
   id: string;
   order_number: string;
@@ -160,7 +182,10 @@ export interface Order {
   tracking_number?: string;
   created_at: string;
   updated_at: string;
+  shipment?: Shipment;
+  shipping_histories?: ShippingHistory[];
 }
+
 
 export interface OrderItem {
   id: string;

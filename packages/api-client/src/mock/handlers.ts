@@ -220,7 +220,36 @@ export function resolveMock(method: string, rawUrl: string, body?: any): MockRes
   if (m === 'GET' && match(path, /\/(admin\/)?(orders|transactions)\/([^/]+)$/) && !path.endsWith('/status')) {
     const id = path.split('/').pop()!;
     const order = MOCK_ORDERS.find((o) => o.id === id || o.order_number === id);
-    return order ? { code: '200', message: 'success', data: order } : { code: '404', message: 'not_found', data: { message: 'Not found' } };
+    if (order) {
+      const tracking = order.tracking_number ? MOCK_TRACKING[order.tracking_number] : undefined;
+      const shippingHistories = tracking?.events.map((ev, idx) => ({
+        id: `ev-${order.id}-${idx}`,
+        status: ev.status,
+        description: ev.description,
+        location: ev.location,
+        created_at: ev.timestamp,
+      })) || [];
+
+      const enrichedOrder = {
+        ...order,
+        shipping_histories: shippingHistories,
+        shipment: order.tracking_number ? {
+          id: `ship-${order.id}`,
+          tracking_number: order.tracking_number,
+          courier_name: tracking?.courier_name || 'Standard',
+          service_name: order.shipping_method === 'express' ? 'YES' : 'REG',
+          recipient_name: order.shipping_address.recipient_name,
+          recipient_phone: order.shipping_address.recipient_phone,
+          address: order.shipping_address.address,
+          city: order.shipping_address.city,
+          province: order.shipping_address.province,
+          postal_code: order.shipping_address.postal_code,
+          shipping_histories: shippingHistories,
+        } : undefined,
+      };
+      return { code: '200', message: 'success', data: enrichedOrder };
+    }
+    return { code: '404', message: 'not_found', data: { message: 'Not found' } };
   }
 
   if (m === 'GET' && path.match(/\/(admin\/)?(orders|transactions)$/)) {
